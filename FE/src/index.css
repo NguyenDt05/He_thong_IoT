@@ -1,0 +1,35 @@
+/* Chuẩn hóa box sizing và font kế thừa cho mọi phần tử giao diện. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* Cho React root chiếm trọn khung nhìn và bỏ lề mặc định của trình duyệt. */
+html,
+body,
+#root {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Thiết lập kiểu chữ, màu nền và cơ chế cuộn ở cấp toàn trang. */
+html {
+    font-family: Helvetica;
+}
+
+body {
+    overflow: hidden;
+    background-color: #f2fbfc;
+    color: #000000;
+}
+
+/* Các điều khiển nhập liệu dùng cùng font với phần nội dung. */
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
