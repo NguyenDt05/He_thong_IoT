@@ -1,0 +1,37 @@
+/* Khối đầu trang xếp tiêu đề và mô tả theo chiều dọc với khoảng cách thống nhất. */
+.page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 40px;
+}
+
+/* Phân cấp chữ: tiêu đề lớn, mô tả nhỏ và có màu nhẹ hơn. */
+.page-title {
+    margin: 0;
+    font-size: 35px;
+    font-weight: bold;
+}
+
+.page-description {
+    margin: 0;
+    font-size: 14px;
+    color: #666666;
+}
+
+/* Màn hình hẹp: giảm lề và cỡ chữ của tiêu đề, mô tả. */
+@media (max-width: 700px) {
+    .page-header {
+        gap: 4px;
+        padding: 18px 12px 0;
+    }
+
+    .page-title {
+        font-size: clamp(24px, 7vw, 30px);
+    }
+
+    .page-description {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+}
