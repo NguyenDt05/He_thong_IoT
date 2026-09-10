@@ -1,0 +1,134 @@
+/* Chân bảng chia đều ba vùng: số dòng, tổng bản ghi, phân trang. */
+.footer {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    padding: 8px 0;
+    gap: 12px;
+    background-color: #e6f5fa;
+}
+
+/* Số bản ghi và cụm nút phân trang dùng cùng cỡ chữ. */
+.banghi,
+.phantrang {
+    font-size: 14px;
+}
+
+.banghi {
+    justify-self: center;
+    white-space: nowrap;
+}
+
+.page-size-control {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 8px;
+    padding-left: 30px;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.page-size-control select {
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid #c5d9ff;
+    border-radius: 8px;
+    background: white;
+    font: inherit;
+    cursor: pointer;
+}
+
+.page-size-control select:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.page-size-control select:focus-visible {
+    background-color: #f1faff;
+}
+
+/* Các nút chuyển trang xếp từ trái sang phải ở cuối chân bảng. */
+.phantrang {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding-right: 12px;
+}
+
+/* Kiểu chung cho nút số trang, mũi tên và trạng thái được chọn. */
+.sotrang {
+    min-width: 34px;
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid #c5d9ff;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+}
+
+.sotrang:hover {
+    background-color: #d6e5ff;
+}
+
+.sotrang.active {
+    background-color: #b8d0ff;
+    border-color: #80a9ed;
+    font-weight: bold;
+}
+
+.sotrang:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Chỗ hẹp hơn: cho phân trang xuống hàng dưới để tổng số vẫn ở chính giữa. */
+@media (max-width: 1260px) {
+    .phantrang {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .footer {
+        grid-template-columns: 1fr;
+    }
+
+    .page-size-control,
+    .banghi,
+    .phantrang {
+        grid-column: 1;
+    }
+
+    .page-size-control {
+        padding-left: 12px;
+    }
+
+    .phantrang {
+        justify-self: center;
+        padding: 0 8px;
+    }
+}
+
+/* Màn hình rất hẹp: giảm kích thước và khoảng cách của nút phân trang. */
+@media (max-width: 420px) {
+    .banghi,
+    .page-size-control,
+    .phantrang {
+        font-size: 13px;
+    }
+
+    .phantrang {
+        gap: 4px;
+    }
+
+    .sotrang {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+    }
+}

@@ -1,0 +1,88 @@
+
+/* Sidebar cố định chiều rộng, phủ hết chiều cao và tách khỏi vùng nội dung. */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #e6f5fa;
+    border-right: 1px solid #c5d9ff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* Vùng thương hiệu ở đầu thanh điều hướng. */
+.sidebar-logo {
+    height: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 35px;
+    font-weight: bold;
+    border-bottom: 1px solid #c5d9ff;
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Danh sách liên kết chính với khoảng đệm cho từng mục. */
+.sidebar-menu {
+    padding: 35px 0 0 0;
+}
+
+.sidebar-item {
+    display: block;
+    padding: 18px 16px;
+    font-weight: 500;
+    font-size: 16px;
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Mục đang rê chuột hoặc đang mở có nền riêng để dễ nhận biết. */
+.sidebar-item:hover {
+    background-color: #d6e5ff;
+}
+
+.sidebar-item.active {
+    background-color: #b8d0ff;
+    font-weight: bold;
+}
+
+/* Màn hình vừa: thu chiều rộng sidebar và chữ thương hiệu. */
+@media (max-width: 1100px) {
+    .sidebar {
+        width: 210px;
+    }
+
+    .sidebar-logo {
+        font-size: 30px;
+    }
+}
+
+/* Màn hình hẹp: biến sidebar thành thanh điều hướng ngang phía trên. */
+@media (max-width: 700px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid #c5d9ff;
+    }
+
+    .sidebar-logo {
+        height: 56px;
+        font-size: 28px;
+    }
+
+    .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        padding: 0;
+        scrollbar-width: thin;
+    }
+
+    .sidebar-item {
+        flex: 0 0 auto;
+        padding: 12px 16px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+}
