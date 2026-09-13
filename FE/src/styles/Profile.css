@@ -1,0 +1,187 @@
+/* Trang hồ sơ chiếm vùng nội dung và chừa khoảng cách với tiêu đề phía trên. */
+.profile {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    padding-top: 20px;
+}
+
+/* Khung hai cột: avatar bên trái, thông tin và liên kết bên phải. */
+.profile-frame {
+    width: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 35% 65%;
+    background-color: #ffffff;
+    border: 1px solid #dce8f2;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* Cột nhận diện căn giữa ảnh đại diện và tên người dùng. */
+.avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    background-color: #eaf6fb;
+    border-right: 1px solid #dce8f2;
+    text-align: center;
+}
+
+/* Ảnh đại diện có kích thước cố định, viền trắng và được cắt tròn. */
+.avatar-img {
+    width: 180px;
+    height: 180px;
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Màu chữ tiêu đề thống nhất giữa phần avatar, thông tin và liên kết. */
+.avatar h2,
+.profile-details h2,
+.profile-link h3 {
+    margin: 0;
+    color: #213f52;
+}
+
+/* Cột chi tiết chia các nhóm nội dung thành từng khu vực có khoảng cách rõ ràng. */
+.profile-details {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 30px;
+    padding: 30px 40px;
+}
+
+/* Tiêu đề của nhóm thông tin và nhóm liên kết. */
+.profile-info h2,
+.profile-links h2 {
+    margin-bottom: 16px;
+    font-size: 20px;
+}
+
+/* Danh sách thông tin cá nhân: khung ngoài, từng hàng và đường phân tách. */
+.profile-info-list {
+    border: 1px solid #dce8f2;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.profile-info-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 16px;
+    padding: 14px 16px;
+}
+
+.profile-info-row + .profile-info-row {
+    border-top: 1px solid #dce8f2;
+}
+
+/* Giá trị dài như email được phép xuống dòng trong cột nội dung. */
+.profile-info-row span {
+    color: #667b89;
+}
+
+.profile-info-row strong {
+    color: #213f52;
+    overflow-wrap: anywhere;
+}
+
+.profile-info-row a {
+    color: inherit;
+    text-underline-offset: 3px;
+}
+
+/* Liên kết tài liệu hiển thị thành lưới hai cột và đổi nền khi rê chuột. */
+.profile-link-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.profile-link {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid #dce8f2;
+    border-radius: 10px;
+    background-color: #f8fcfe;
+    color: #315d78;
+    text-decoration: none;
+}
+
+/* Phản hồi hover và phân cấp chữ trong từng thẻ liên kết. */
+.profile-link:hover {
+    background-color: #edf7fc;
+}
+
+.profile-link h3 {
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.profile-link span {
+    font-size: 14px;
+}
+
+/* Màn hình vừa: thu ảnh đại diện và khoảng đệm hai cột. */
+@media (max-width: 900px) {
+    .profile-frame {
+        grid-template-columns: 40% 60%;
+    }
+
+    .profile-details {
+        gap: 22px;
+        padding: 24px;
+    }
+
+    .avatar-img {
+        width: 140px;
+        height: 140px;
+    }
+}
+
+/* Màn hình hẹp: xếp avatar, thông tin và liên kết thành một cột. */
+@media (max-width: 700px) {
+    .profile {
+        padding-top: 14px;
+        overflow-y: auto;
+    }
+
+    .profile-frame {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .avatar {
+        padding: 20px 16px;
+        border-right: 0;
+        border-bottom: 1px solid #dce8f2;
+    }
+
+    .avatar-img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .profile-details {
+        gap: 24px;
+        padding: 20px 16px;
+    }
+
+    .profile-info-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 12px;
+    }
+
+    .profile-link-list {
+        grid-template-columns: 1fr;
+    }
+}
