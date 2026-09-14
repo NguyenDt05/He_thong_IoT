@@ -1,0 +1,24 @@
+/* Vùng chứa giúp ô tìm kiếm giãn vừa chiều rộng được cấp bởi toolbar. */
+.searchbar {
+    width: 100%; 
+    display: flex;
+    align-items: center;
+}
+
+/* Ô nhập co giãn theo thanh công cụ và giữ chiều cao bằng các bộ lọc. */
+.search-input {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    padding: 0 16px;
+    border: 1px solid #c5d9ff;
+    border-radius: 10px;
+    background-color: #ffffff;
+}
+
+/* Trạng thái focus cho thấy ô nhập đang nhận bàn phím. */
+.search-input:focus {
+    border-color: #a9c6ff;
+    outline: 2px solid #a9c6ff;
+    outline-offset: 1px;
+}
