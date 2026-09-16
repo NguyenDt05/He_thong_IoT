@@ -1,0 +1,39 @@
+/* Khung nền chung cho mỗi tiêu chí chọn trong thanh công cụ. */
+.filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 14px;
+    background-color: #e6f5fa;
+    border: 1px solid #c5d9ff;
+    border-radius: 10px;
+    box-sizing: border-box; 
+}
+
+/* Select nằm gọn trong khung lọc và dùng nền trong suốt. */
+.filter-select {
+    min-width: 145px;
+    border: none;
+    background-color: transparent;
+    font-size: 14px;
+}
+
+/* Nhãn tùy chọn không tự xuống dòng khi được dùng trong bộ lọc. */
+.filter-label { 
+    white-space: nowrap; 
+    font-size: 14px;
+}
+
+/* Màn hình hẹp: ô chọn giãn theo chiều rộng khung lọc. */
+@media (max-width: 700px) {
+    .filter {
+        min-width: 0;
+        padding: 0 10px;
+    }
+
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
