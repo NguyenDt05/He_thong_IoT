@@ -1,0 +1,68 @@
+/* Trang cảm biến xếp toolbar, bảng và Footer theo chiều dọc trong vùng nội dung. */
+.data-sensor {
+    padding-top: 20px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Thứ tự thanh tìm kiếm: tiêu chí, từ khóa, tìm kiếm và bỏ lọc. */
+.sensor-toolbar .filter {
+    flex: 0 0 190px;
+}
+
+.sensor-toolbar .sensor-search-input {
+    flex: 1 1 260px;
+    min-width: 200px;
+}
+
+.sensor-toolbar .search-actions {
+    flex: 0 1 auto;
+}
+
+/* Dòng thông báo về bản đã lưu nằm giữa thanh tìm kiếm và bảng. */
+.sensor-cache-notice {
+    margin: 12px 0 0;
+    color: #7c4a03;
+    font-size: 13px;
+}
+
+/* Bảng chiếm phần chiều cao còn lại; phần cuộn được xử lý bên trong bảng. */
+.table {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    overflow: hidden;
+}
+
+/* Màn hình hẹp: giảm khoảng cách và cho phép cuộn ngang bảng. */
+@media (max-width: 700px) {
+    .sensor-toolbar .filter,
+    .sensor-toolbar .sensor-search-input,
+    .sensor-toolbar .search-actions {
+        flex-basis: 100%;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .sensor-toolbar .search-actions button {
+        flex: 1 1 150px;
+    }
+
+    .data-sensor {
+        padding-top: 14px;
+    }
+
+    .sensor-cache-notice {
+        line-height: 1.4;
+    }
+
+    .table {
+        margin-top: 12px;
+        overflow-x: auto;
+    }
+}
