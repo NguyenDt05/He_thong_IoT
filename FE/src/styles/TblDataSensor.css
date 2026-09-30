@@ -1,0 +1,71 @@
+/* Khung bảng cảm biến chia phần tiêu đề cố định và phần dữ liệu cuộn dọc. */
+.sensor-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+/* Màn hình hẹp: giữ bảng đủ rộng để đọc và cuộn ngang ở khung ngoài. */
+@media (max-width: 700px) {
+    .sensor-table {
+        min-width: 720px;
+    }
+
+    .sensor-table th,
+    .sensor-table td {
+        padding: 11px 12px;
+    }
+}
+
+/* Đồng bộ chỗ dành cho thanh cuộn ở tiêu đề và nội dung để cột thẳng hàng. */
+.sensor-table thead,
+.sensor-table tbody {
+    display: block;
+    scrollbar-gutter: stable;
+}
+
+/* Màu nền tiêu đề và vùng cuộn riêng cho danh sách bản ghi. */
+.sensor-table thead {
+    flex-shrink: 0;
+    overflow-y: hidden;
+    background-color: #d8eef6;
+}
+
+.sensor-table tbody {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Năm cột lần lượt là ID, tên, loại, giá trị và thời gian. */
+.sensor-table tr {
+    display: grid;
+    grid-template-columns: 10% 28% 18% 19% 25%;
+}
+
+/* Ô tiêu đề và ô dữ liệu dùng cùng đệm và đường kẻ phân hàng. */
+.sensor-table th {
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #aedce8;
+}
+
+.sensor-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #aedce8;
+}
+
+/* Phản hồi hover trên dòng dữ liệu và cho dòng rỗng trải đủ chiều rộng. */
+.sensor-table tbody tr:hover {
+    background-color: #eef5ff;
+}
+
+.sensor-table .empty-row {
+    grid-template-columns: 1fr;
+}

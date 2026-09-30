@@ -1,0 +1,129 @@
+/* Thanh công cụ chứa ô tìm kiếm và các tiêu chí; tự xuống dòng khi thiếu chỗ. */
+.toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 10px;
+}
+
+/* Ô nhập chiếm phần không gian còn lại, nhóm select/nút có thể tự chia hàng. */
+.toolbar-left {
+    flex: 1 1 320px;
+    min-width: 220px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Nhóm nút tìm kiếm và xóa dùng kích thước, viền và icon nhất quán. */
+.search-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.search-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #c5d9ff;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.search-actions svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+/* Nút chính nổi bật; nút xóa giữ nền trung tính để phân biệt mức ưu tiên. */
+.search-button {
+    color: #ffffff;
+    background: #000000;
+}
+
+.search-button:hover {
+    background: #184e6e;
+}
+
+.clear-button {
+    color: #315d78;
+    background: #ffffff;
+}
+
+.clear-button:hover {
+    background: #edf7fc;
+}
+
+/* Viền focus hỗ trợ thao tác bằng bàn phím trên nút và ô chọn. */
+.search-actions button:focus-visible,
+.filter-select:focus-visible {
+    outline: 2px solid #23648a;
+    outline-offset: 2px;
+}
+
+/* Trên màn hình hẹp, chuyển ô tìm kiếm lên một hàng riêng. */
+@media (max-width: 900px) { 
+    .toolbar-left {
+        flex-basis: 100%;
+    }
+}
+
+/* Màn hình hẹp: chia các bộ lọc thành hai cột bên dưới ô tìm kiếm. */
+@media (max-width: 700px) {
+    .toolbar {
+        gap: 8px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        flex-basis: 100%;
+        min-width: 0;
+    }
+
+    .toolbar-right {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .filter,
+    .search-actions,
+    .search-actions button {
+        width: 100%;
+    }
+
+    .search-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Màn hình rất hẹp: xếp bộ lọc và nút thành một cột. */
+@media (max-width: 420px) {
+    .toolbar-right {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter,
+    .search-actions {
+        width: 100%;
+    }
+}
