@@ -1,0 +1,104 @@
+/* Khung bảng: chiếm toàn bộ vùng chứa và xếp phần đầu, phần thân theo chiều dọc. */
+.history-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    font-size: 14px;
+    background-color: #fff;
+}
+
+/* Màn hình hẹp: giữ đủ độ rộng cho sáu cột và cuộn ngang ở khung ngoài. */
+@media (max-width: 700px) {
+    .history-table {
+        min-width: 900px;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 11px 12px;
+    }
+}
+
+/* Tách header và body để chỉ phần dữ liệu cuộn, đồng thời giữ cột thẳng hàng. */
+.history-table thead,
+.history-table tbody {
+    display: block;
+    scrollbar-gutter: stable;
+}
+
+/* Header đứng yên phía trên vùng dữ liệu. */
+.history-table thead {
+    flex-shrink: 0;
+    overflow-y: hidden;
+    background-color: #d8eef6;
+}
+
+/* Vùng chứa các dòng dữ liệu; cuộn dọc khi nội dung vượt chiều cao khả dụng. */
+.history-table tbody {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Chia mỗi dòng thành sáu cột: ID, thiết bị, người dùng, hành động, trạng thái, thời gian. */
+.history-table tr {
+    display: grid;
+    grid-template-columns: 8% 22% 20% 10% 18% 22%;
+}
+
+/* Căn lề, khoảng cách và đường phân cách chung cho các ô. */
+.history-table th,
+.history-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #aedce8;
+}
+
+/* Nhấn mạnh chữ trong các ô tiêu đề. */
+.history-table th {
+    font-weight: 600;
+}
+
+/* Căn giữa nội dung trạng thái và tạo kiểu pill chung cho nhãn trạng thái. */
+.history-table .status {
+    text-align: center;
+}
+
+.history-table .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+/* Màu nhãn theo kết quả: thành công, đang chờ hoặc thất bại. */
+.history-table .status-badge-success {
+    color: #15803d;
+    background-color: #f0fdf4;
+    border-color: #86efac;
+}
+
+.history-table .status-badge-pending {
+    color: #a16207;
+    background-color: #fefce8;
+    border-color: #fde047;
+}
+
+.history-table .status-badge-failed {
+    color: #b91c1c;
+    background-color: #fef2f2;
+    border-color: #fca5a5;
+}
+
+/* Làm nổi bật dòng dữ liệu khi rê chuột. */
+.history-table tbody tr:hover {
+    background-color: #eef5ff;
+}
+
+/* Dòng thông báo rỗng trải toàn bộ chiều rộng sáu cột. */
+.history-table .empty-row {
+    grid-template-columns: 1fr;
+}
