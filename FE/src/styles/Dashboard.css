@@ -140,12 +140,12 @@
     margin: 0 0 3px;
     font-size: 14px;
 }
-
+/* Trạng thái bật/tắt của đèn, dùng màu vàng khi bật. */
 .light-card-details span {
     color: #64748b;
     font-size: 11px;
 }
-
+/* Khi đèn bật, đổi màu chữ trạng thái sang vàng. */
 .light-card.is-on .light-card-details span {
     color: #b87908;
 }

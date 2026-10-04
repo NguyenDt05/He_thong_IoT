@@ -37,9 +37,9 @@ function Profile() {
             <section className="profile-links">
               <h2>Liên kết</h2>
               <div className="profile-link-list">
-                <a className="profile-link" href="https://github.com/NguyenDt05/IoT-Ungdung" target="_blank" rel="noopener noreferrer">
+                <a className="profile-link" href="https://github.com/NguyenDt05/He_thong_IoT" target="_blank" rel="noopener noreferrer">
                   <h3>Github</h3>
-                  <span>IoT-Ungdung</span>
+                  <span>He_thong_IoT</span>
                 </a>
                 <a className="profile-link" href="https://www.figma.com/design/a697q3sxoIkKP7aHhtxGHe/IoT?node-id=1-4195&t=3aREkYWGoDZ9DBz0-0" target="_blank" rel="noopener noreferrer">
                   <h3>Figma</h3>
