@@ -5,18 +5,10 @@
     gap: 10px;
     min-height: 44px;
     padding: 0 14px;
-    background-color: #e6f5fa;
+    background-color: #ffffff;
     border: 1px solid #c5d9ff;
     border-radius: 10px;
     box-sizing: border-box; 
-}
-
-/* Select nằm gọn trong khung lọc và dùng nền trong suốt. */
-.filter-select {
-    min-width: 145px;
-    border: none;
-    background-color: transparent;
-    font-size: 14px;
 }
 
 /* Nhãn tùy chọn không tự xuống dòng khi được dùng trong bộ lọc. */
@@ -30,10 +22,5 @@
     .filter {
         min-width: 0;
         padding: 0 10px;
-    }
-
-    .filter-select {
-        width: 100%;
-        min-width: 0;
     }
 }

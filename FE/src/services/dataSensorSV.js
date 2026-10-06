@@ -1,7 +1,7 @@
-import { API_BASE_URL } from "../configs/apiConfig";
+import { API_BASE_URL } from "./apiConfig";
 
 const API_URL = `${API_BASE_URL}/data-sensor`;
-const CACHE_KEY = "iot-last-db-sensor-pages-v1";
+const CACHE_KEY = "iot-last-db-sensor-pages-v2";
 const MAX_CACHED_PAGES = 20;
 
 // Nhóm hàm đọc, kiểm tra và lưu trang cảm biến trong bộ nhớ trình duyệt.

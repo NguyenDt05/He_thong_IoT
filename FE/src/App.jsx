@@ -1,9 +1,9 @@
 import { Router } from "./router";
 import { useNavigation } from "./navigationContext";
-import DataSensor from "./pages/DataSensor";
-import History from "./pages/History";
-import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
+import DataSensor from "./pages/DataSensor/DataSensor";
+import History from "./pages/History/History";
+import Profile from "./pages/Profile/Profile";
+import Dashboard from "./pages/Dashboard/Dashboard";
 
 // Bảng ánh xạ URL với trang tương ứng; URL không có trong bảng sẽ mở Dashboard.
 const pages = {

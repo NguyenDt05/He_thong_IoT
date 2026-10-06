@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../configs/apiConfig";
+import { API_BASE_URL } from "./apiConfig";
 
 const API_URL = `${API_BASE_URL}/devices`;
 

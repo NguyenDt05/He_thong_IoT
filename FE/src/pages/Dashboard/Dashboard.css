@@ -3,7 +3,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    padding: 12px 2px 0 0;
+    padding: 8px 2px 0 0;
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
     gap: 12px;
@@ -30,6 +30,27 @@
     font-weight: 700;
 }
 
+.sensor-demo-toggle {
+    border: 1px solid #328fc8;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f4c69;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sensor-demo-toggle[aria-pressed="true"] {
+    background: #e6f5fa;
+}
+
+.sensor-demo-toggle:focus-visible {
+    outline: 2px solid #328fc8;
+    outline-offset: 3px;
+}
+
 /* Lưới thẻ chung; lưới đèn tự đổi số cột theo chỗ trống. */
 .dashboard-grid {
     display: grid;
@@ -49,30 +70,39 @@
     border-radius: 12px;
 }
 
-/* Thẻ cảm biến gọn hơn: chỉ số bên trái, tên và biểu tượng bên phải. */
+/* Thẻ cảm biến: tên và chỉ số bên trái, biểu tượng bên phải. */
 .sensor-card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) 64px;
     align-items: center;
-    gap: 10px;
-    min-height: 66px;
+    gap: 12px;
+    min-height: 112px;
     padding: 8px 14px;
     border-top: 3px solid var(--sensor-color);
+    transition: border-color 0.4s ease;
 }
 
 .temperature { --sensor-color: #ec7656; }
 .humidity { --sensor-color: #328fc8; }
 .light { --sensor-color: #e0a62c; }
 
-/* Nhóm tên và icon nằm ở nửa phải của thẻ. */
+/* Tên cảm biến nằm ngay trên giá trị. */
 .sensor-card-info {
     display: flex;
-    align-items: center;
-    gap: 9px;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
 }
 
-.sensor-icon,
+.sensor-card-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+}
+
 .light-icon {
     width: 34px;
     height: 34px;
@@ -80,7 +110,6 @@
     align-items: center;
     justify-content: center;
     border-radius: 9px;
-    background: #eff7fa;
     font-size: 21px;
     flex-shrink: 0;
 }
@@ -89,7 +118,7 @@
     color: #475569;
     font-size: 14px;
     font-weight: 600;
-    text-align: right;
+    text-align: left;
 }
 
 .sensor-reading {
@@ -99,6 +128,7 @@
     min-width: 0;
     white-space: nowrap;
     color: var(--sensor-color);
+    transition: color 0.4s ease;
 }
 
 .sensor-reading strong {
@@ -121,7 +151,7 @@
 }
 
 .light-card.is-on .light-icon {
-    background: #fff3cc;
+
     filter: none;
     opacity: 1;
 }
@@ -174,7 +204,7 @@
 }
 
 .light-switch[aria-checked="true"] {
-    background: #e9af37;
+    background: #34C759;
 }
 
 .light-switch[aria-checked="true"] span {
@@ -186,42 +216,12 @@
     opacity: 0.5;
 }
 
-.light-switch:focus-visible,
-.chart-tabs button:focus-visible {
+.light-switch:focus-visible {
     outline: 2px solid #328fc8;
     outline-offset: 3px;
 }
 
-/* Đầu cụm biểu đồ gồm tiêu đề và các nút chọn loại cảm biến. */
-.chart-section-heading {
-    align-items: center;
-}
-
-.chart-tabs {
-    display: flex;
-    gap: 5px;
-    padding: 3px;
-    border-radius: 11px;
-    background: #e6f5fa;
-}
-
-.chart-tabs button {
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: #475569;
-    padding: 6px 10px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.chart-tabs button.selected {
-    background: #fff;
-    color: #0f4c69;
-    font-weight: 700;
-}
-
-/* Khung biểu đồ chứa tên, đơn vị và vùng vẽ SVG. */
+/* Khung biểu đồ chung cho ba cảm biến. */
 .chart-card {
     display: flex;
     flex-direction: column;
@@ -229,19 +229,6 @@
     min-height: 0;
     overflow: hidden;
     padding: 10px 14px 4px;
-    color: var(--sensor-color);
-}
-
-.chart-card-heading {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    color: #172e3b;
-}
-
-.chart-card-heading span {
-    color: #64748b;
-    font-size: 13px;
 }
 
 .dashboard-chart {
@@ -250,17 +237,6 @@
     height: 100%;
     flex: 1;
     min-height: 0;
-}
-
-.dashboard-chart-grid line {
-    stroke: #e6eef2;
-    stroke-dasharray: 4 5;
-}
-
-.dashboard-chart-grid text,
-.dashboard-chart-time {
-    fill: #7b8c99;
-    font-size: 12px;
 }
 
 .chart-empty { 
@@ -276,15 +252,6 @@
         display: none;
     }
 
-    .sensor-icon {
-        width: 30px;
-        height: 30px;
-        font-size: 18px;
-    }
-
-    .chart-section-heading {
-        flex-wrap: wrap;
-    }
 }
 
 /* Màn hình hẹp: xếp lại lưới thẻ và cho biểu đồ đủ chiều cao. */
@@ -310,17 +277,8 @@
         gap: 8px;
     }
 
-    .chart-tabs {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .chart-tabs button {
-        flex: 1;
-    }
-
     .chart-card {
-        min-height: 280px;
+        min-height: 320px;
     }
 }
 

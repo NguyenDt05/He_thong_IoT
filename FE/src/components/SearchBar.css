@@ -18,7 +18,7 @@
 
 /* Trạng thái focus cho thấy ô nhập đang nhận bàn phím. */
 .search-input:focus {
-    border-color: #a9c6ff;
-    outline: 2px solid #a9c6ff;
+    border-color: none;
+    outline: none;
     outline-offset: 1px;
 }

@@ -1,5 +1,5 @@
 // Hai thao tác chung: gửi form tìm kiếm và xóa toàn bộ giá trị lọc tại trang cha.
-function SearchActions({ onClear, clearLabel = "Xóa bộ lọc" }) {
+function SearchActions({ onClear, clearLabel = "Đặt lại" }) {
   return (
     <div className="search-actions">
       <button className="search-button" type="submit">

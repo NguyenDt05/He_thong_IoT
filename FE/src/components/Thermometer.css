@@ -1,0 +1,17 @@
+.thermometer {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    background: #fff;
+}
+
+.thermometer-liquid,
+.thermometer-outline {
+    position: absolute;
+    inset: 0;
+}
+
+.thermometer-liquid {
+    transition: clip-path 0.4s ease;
+}

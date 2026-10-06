@@ -1,5 +1,5 @@
-import { dinhdang } from "../../configs/appConfig";
-import "../../styles/TblDataSensor.css";
+import { dinhdang } from "../../utils/formatDate";
+import "./TblDataSensor.css";
 
 // Bảng cảm biến hiển thị các bản ghi API, gồm trạng thái rỗng và đơn vị đo của từng loại.
 function TblDataSensor({ data, emptyMessage }) {

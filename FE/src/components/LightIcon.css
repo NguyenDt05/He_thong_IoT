@@ -1,0 +1,46 @@
+.light-sun {
+    display: block;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.light-sun-ray line {
+    stroke-linecap: round;
+}
+
+.light-sun-line {
+    stroke: #fff;
+    stroke-width: 2.5;
+    transition: stroke 0.4s ease;
+}
+
+.light-sun-glow {
+    stroke: #FFD700;
+    stroke-width: 4;
+    filter: blur(3px);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.light-sun-ray.is-active .light-sun-line {
+    stroke: #FFD700;
+}
+
+.light-sun-ray.is-active .light-sun-glow {
+    opacity: 0.85;
+}
+
+.light-sun-center {
+    fill: #FFDF33;
+    stroke: #FFD700;
+    stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .light-sun-line,
+    .light-sun-glow {
+        transition: none;
+    }
+}

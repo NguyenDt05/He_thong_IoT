@@ -1,6 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import PageHeader from "../components/PageHeader";
-import "../styles/MainLayout.css";
+import "./MainLayout.css";
 
 // Khung dùng chung: sidebar, tiêu đề trang và vùng nội dung riêng của mỗi màn hình.
 function MainLayout({ title, description, children }) {

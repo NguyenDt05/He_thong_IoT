@@ -1,4 +1,4 @@
-import "../styles/PageHeader.css";
+import "./PageHeader.css";
 
 // Hiển thị tiêu đề và mô tả do trang hiện tại truyền vào.
 function PageHeader({ title, description }) {

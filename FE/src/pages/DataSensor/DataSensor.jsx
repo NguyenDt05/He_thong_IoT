@@ -1,24 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { layDuLieuCB_daLuu_sv, layDuLieuCB_sv } from "../service/dataSensorSV";
-import TblDataSensor from "../components/data/TblDataSensor";
-import MainLayout from "../layouts/MainLayout";
-import SearchBar from "../components/SearchBar";
-import SearchActions from "../components/SearchActions";
-import Filter from "../components/Filter";
-import Footer from "../components/Footer";
-import "../styles/DataSensor.css";
-import "../styles/Toolbar.css";
+import { layDuLieuCB_daLuu_sv, layDuLieuCB_sv } from "../../services/dataSensorSV";
+import TblDataSensor from "../../components/data/TblDataSensor";
+import MainLayout from "../../layouts/MainLayout";
+import SearchBar from "../../components/SearchBar";
+import SearchActions from "../../components/SearchActions";
+import Filter from "../../components/Filter";
+import DropdownSelect from "../../components/DropdownSelect";
+import Footer from "../../components/Footer";
+import "./DataSensor.css";
+import "../../styles/Toolbar.css";
 
-// Thiết lập số dòng mỗi trang và nhịp tải lại của bảng cảm biến.
+// Thiết lập số dòng mỗi trang và thời gian chờ phản hồi API.
 const DEFAULT_PAGE_SIZE = 20;
-const REFRESH_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 const DEFAULT_FILTERS = { key: "", field: "all" };
+const SENSOR_TYPES = {
+  temperature: "TEMPERATURE",
+  humidity: "HUMIDITY",
+  light: "LIGHT",
+};
 const SEARCH_PLACEHOLDERS = {
-  all: "Tìm theo tên, loại, ngày giờ hoặc giá trị",
-  type: "Nhập loại cảm biến (ví dụ: nhiệt độ)",
+  all: "Tìm theo bất kỳ cột nào",
+  temperature: "Nhập giá trị cảm biến nhiệt độ",
+  humidity: "Nhập giá trị cảm biến độ ẩm",
+  light: "Nhập giá trị cảm biến ánh sáng",
   datetime: "Nhập ngày giờ (dd/mm/yyyy hh:mm:ss)",
-  value: "Nhập giá trị cảm biến",
 };
 
 // Trang cảm biến quản lý tiêu chí đang nhập, tiêu chí đã áp dụng và dữ liệu nhận từ API.
@@ -45,10 +51,9 @@ function DataSensor() {
   const [error, setError] = useState("");
   const [usingCachedData, setUsingCachedData] = useState(Boolean(initialCachedPage));
 
-  // Cập nhật trang hiện tại định kỳ và hủy yêu cầu cũ khi đổi trang hoặc bộ lọc.
+  // Tải trang hiện tại và hủy yêu cầu cũ khi đổi trang hoặc bộ lọc đã áp dụng.
   useEffect(() => {
     let active = true;
-    let inFlight = false;
     let activeController = null;
 
     function showSnapshot(result) {
@@ -61,25 +66,22 @@ function DataSensor() {
       setHasSnapshot(true);
     }
 
-    async function loadData(silent = false) {
-      if (!active || inFlight) return;
-      inFlight = true;
+    async function loadData() {
+      if (!active) return;
       const controller = new AbortController();
       activeController = controller;
       const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-      if (!silent) {
-        const saved = layDuLieuCB_daLuu_sv(page, pageSize, appliedFilters);
-        setLoading(true);
-        setError("");
-        if (saved) {
-          showSnapshot(saved);
-          setUsingCachedData(true);
-        } else if (!lastShownRef.current) {
-          setData([]);
-          setTotal(0);
-          setUsingCachedData(false);
-        }
+      const saved = layDuLieuCB_daLuu_sv(page, pageSize, appliedFilters);
+      setLoading(true);
+      setError("");
+      if (saved) {
+        showSnapshot(saved);
+        setUsingCachedData(true);
+      } else if (!lastShownRef.current) {
+        setData([]);
+        setTotal(0);
+        setUsingCachedData(false);
       }
 
       try {
@@ -106,17 +108,14 @@ function DataSensor() {
         }
       } finally {
         window.clearTimeout(timeout);
-        inFlight = false;
         if (activeController === controller) activeController = null;
-        if (active && !silent) setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     loadData();
-    const interval = window.setInterval(() => loadData(true), REFRESH_MS);
     return () => {
       active = false;
-      window.clearInterval(interval);
       activeController?.abort();
     };
   }, [page, pageSize, appliedFilters]);
@@ -130,10 +129,13 @@ function DataSensor() {
   function handleSearch(event) {
     event.preventDefault();
     setPage(1);
-    setAppliedFilters({ key: search.trim(), field: searchField });
+    const type = SENSOR_TYPES[searchField];
+    setAppliedFilters(type
+      ? { key: search.trim(), field: "value", type }
+      : { key: search.trim(), field: searchField });
   }
 
-  // Xóa ô nhập, tiêu chí chọn và danh sách đã lọc bằng cách tải lại trang đầu.
+  // Đặt lại cả form và bộ lọc đang áp dụng để tải lại danh sách từ trang đầu.
   function handleClear() {
     setSearch("");
     setSearchField("all");
@@ -144,7 +146,8 @@ function DataSensor() {
   const showingPreviousRequest = page !== shownPage
     || pageSize !== shownPageSize
     || appliedFilters.key !== shownFilters.key
-    || appliedFilters.field !== shownFilters.field;
+    || appliedFilters.field !== shownFilters.field
+    || appliedFilters.type !== shownFilters.type;
 
   // Bố cục trang gồm form tìm kiếm, bảng kết quả và chân bảng phân trang.
   return (
@@ -156,17 +159,19 @@ function DataSensor() {
         {/* Chọn tiêu chí và nhập từ khóa trước; bảng chỉ đổi khi gửi form. */}
         <form className="toolbar sensor-toolbar" role="search" onSubmit={handleSearch}>
           <Filter>
-            <select
-              className="filter-select"
-              aria-label="Tiêu chí lọc dữ liệu cảm biến"
+            <DropdownSelect
+              variant="filter"
+              ariaLabel="Tiêu chí lọc dữ liệu cảm biến"
               value={searchField}
-              onChange={(event) => setSearchField(event.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="type">Loại cảm biến</option>
-              <option value="datetime">Ngày giờ</option>
-              <option value="value">Giá trị</option>
-            </select>
+              onChange={setSearchField}
+              options={[
+                { value: "all", label: "Tất cả" },
+                { value: "temperature", label: "Cảm biến nhiệt độ" },
+                { value: "humidity", label: "Cảm biến độ ẩm" },
+                { value: "light", label: "Cảm biến ánh sáng" },
+                { value: "datetime", label: "Ngày giờ" },
+              ]}
+            />
           </Filter>
           <div className="sensor-search-input">
             <SearchBar
@@ -175,7 +180,7 @@ function DataSensor() {
               placeholder={SEARCH_PLACEHOLDERS[searchField]}
             />
           </div>
-          <SearchActions onClear={handleClear} clearLabel="Loại bỏ lọc" />
+          <SearchActions onClear={handleClear} clearLabel="Đặt lại" />
         </form>
 
         {/* Dòng thông báo nằm trên bảng khi đang hiển thị bản đã lưu. */}

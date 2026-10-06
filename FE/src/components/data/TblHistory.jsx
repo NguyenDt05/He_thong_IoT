@@ -1,5 +1,5 @@
-import { dinhdang } from "../../configs/appConfig";
-import "../../styles/TblHistory.css";
+import { dinhdang } from "../../utils/formatDate";
+import "./TblHistory.css";
 
 // Nhãn trạng thái được tách khỏi mã trạng thái dùng trong bộ lọc.
 const statusLabels = { SUCCESS: "Success", FAILED: "Failed", PENDING: "Pending" };

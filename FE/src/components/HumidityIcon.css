@@ -1,0 +1,50 @@
+.humidity-icon {
+    display: block;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.humidity-icon-background {
+    fill: #e6f4fa;
+}
+
+.humidity-icon-track,
+.humidity-icon-progress {
+    fill: none;
+    stroke-width: 5;
+    transform: rotate(-90deg);
+    transform-origin: 32px 32px;
+}
+
+.humidity-icon-track {
+    stroke: #fff;
+}
+
+.humidity-icon-progress {
+    stroke: #00bfff;
+    transition: stroke-dashoffset 0.4s ease;
+}
+
+.humidity-icon-drop {
+    fill: #fff;
+}
+
+.humidity-icon-water {
+    fill: #87cefa;
+    transition: transform 0.4s ease;
+}
+
+.humidity-icon-drop-outline {
+    fill: none;
+    stroke: #1e90ff;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .humidity-icon-progress,
+    .humidity-icon-water {
+        transition: none;
+    }
+}

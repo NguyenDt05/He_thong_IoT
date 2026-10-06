@@ -1,6 +1,6 @@
-import MainLayout from "../layouts/MainLayout";
-import avatarImage from "../assets/avt.jpg";
-import "../styles/Profile.css";
+import MainLayout from "../../layouts/MainLayout";
+import avatarImage from "../../assets/avt.jpg";
+import "./Profile.css";
 
 // Trang hồ sơ gồm khung avatar bên trái và các nhóm chi tiết bên phải.
 function Profile() {
@@ -28,7 +28,11 @@ function Profile() {
                 </div>
                 <div className="profile-info-row">
                   <span>Email</span>
-                  <strong><a href="mailto:NguyenDt.B23DCCN609@stu.ptit.edu.vn">NguyenDt.B23DCCN609@stu.ptit.edu.vn</a></strong>
+                  <strong>NguyenDt.B23DCCN609@stu.ptit.edu.vn</strong>
+                </div>
+                <div className="profile-info-row">
+                  <span>Phone</span>
+                  <strong>0383954520</strong>
                 </div>
               </div>
             </section>
@@ -48,6 +52,10 @@ function Profile() {
                 <a className="profile-link" href="https://docs.google.com/document/d/1lgN4qU-nC3XX1EEsEnCts9SywMMvujR5bhiocwNPsfk/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
                   <h3>Báo cáo</h3>
                   <span>BaoCaoIoT</span>
+                </a>
+                <a className="profile-link" href="https://docs.google.com/document/d/1lgN4qU-nC3XX1EEsEnCts9SywMMvujR5bhiocwNPsfk/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                  <h3>Postman</h3>
+                  <span>API Testing</span>
                 </a>
               </div>
             </section>

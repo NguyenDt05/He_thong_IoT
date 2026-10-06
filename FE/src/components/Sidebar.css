@@ -29,12 +29,17 @@
 }
 
 .sidebar-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-inline: 12px; /* Khoảng cách trái phải của từng mục. */
+    margin-block: 5px; /* Khoảng cách trên dưới của từng mục. */
     padding: 18px 16px;
     font-weight: 500;
     font-size: 16px;
     color: inherit;
     text-decoration: none;
+    border-radius: 11px;
 }
 
 /* Mục đang rê chuột hoặc đang mở có nền riêng để dễ nhận biết. */
@@ -46,6 +51,33 @@
     background-color: #b8d0ff;
     font-weight: bold;
 }
+
+.sidebar-user {
+    margin-top: auto;
+    padding: 18px 16px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    font-size: 16px;
+    border-top: 1px solid #c5d9ff;
+    color: inherit; /* Màu chữ kế thừa từ theme. */
+    text-decoration: none; /* Không gạch chân. */
+    cursor: pointer; /* Con trỏ chuột khi rê vào. */
+}
+
+.sidebar-user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sidebar-user-name {
+    min-width: 0;
+}
+
 
 /* Màn hình vừa: thu chiều rộng sidebar và chữ thương hiệu. */
 @media (max-width: 1100px) {

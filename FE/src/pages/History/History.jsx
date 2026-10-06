@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import MainLayout from "../layouts/MainLayout";
-import { layThietBi_sv } from "../service/deviceSV";
-import { layLichSu_sv } from "../service/historySV";
-import SearchBar from "../components/SearchBar";
-import SearchActions from "../components/SearchActions";
-import Filter from "../components/Filter";
-import TblHistory from "../components/data/TblHistory";
-import Footer from "../components/Footer";
-import "../styles/History.css";
-import "../styles/Toolbar.css";
+import MainLayout from "../../layouts/MainLayout";
+import { layThietBi_sv } from "../../services/deviceSV";
+import { layLichSu_sv } from "../../services/historySV";
+import SearchBar from "../../components/SearchBar";
+import SearchActions from "../../components/SearchActions";
+import Filter from "../../components/Filter";
+import DropdownSelect from "../../components/DropdownSelect";
+import TblHistory from "../../components/data/TblHistory";
+import Footer from "../../components/Footer";
+import "./History.css";
+import "../../styles/Toolbar.css";
 
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_FILTERS = { key: "", device: "", action: "", status: "" };
@@ -115,42 +116,43 @@ function History() {
           {/* Ba hộp lọc thiết bị, hành động, trạng thái và các nút thao tác. */}
           <div className="toolbar-right">
             <Filter>
-              <select
-                className="filter-select"
-                aria-label="Thiết bị"
+              <DropdownSelect
+                variant="filter"
+                ariaLabel="Thiết bị"
                 value={appliedFilters.device}
-                onChange={(event) => handleFilterChange("device", event.target.value)}
-              >
-                <option value="">Tất cả thiết bị</option>
-                {devices.map((item) => (
-                  <option key={item.deviceId} value={`DEVICE_${item.deviceId}`}>{item.deviceName}</option>
-                ))}
-              </select>
+                onChange={(value) => handleFilterChange("device", value)}
+                options={[
+                  { value: "", label: "Tất cả thiết bị" },
+                  ...devices.map((item) => ({ value: `DEVICE_${item.deviceId}`, label: item.deviceName })),
+                ]}
+              />
             </Filter>
             <Filter>
-              <select
-                className="filter-select"
-                aria-label="Hành động"
+              <DropdownSelect
+                variant="filter"
+                ariaLabel="Hành động"
                 value={appliedFilters.action}
-                onChange={(event) => handleFilterChange("action", event.target.value)}
-              >
-                <option value="">Tất cả hành động</option>
-                <option value="ON">Bật</option>
-                <option value="OFF">Tắt</option>
-              </select>
+                onChange={(value) => handleFilterChange("action", value)}
+                options={[
+                  { value: "", label: "Tất cả hành động" },
+                  { value: "ON", label: "Bật" },
+                  { value: "OFF", label: "Tắt" },
+                ]}
+              />
             </Filter>
             <Filter>
-              <select
-                className="filter-select"
-                aria-label="Trạng thái"
+              <DropdownSelect
+                variant="filter"
+                ariaLabel="Trạng thái"
                 value={appliedFilters.status}
-                onChange={(event) => handleFilterChange("status", event.target.value)}
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="SUCCESS">Success</option>
-                <option value="FAILED">Failed</option>
-                <option value="PENDING">Pending</option>
-              </select>
+                onChange={(value) => handleFilterChange("status", value)}
+                options={[
+                  { value: "", label: "Tất cả trạng thái" },
+                  { value: "SUCCESS", label: "Success" },
+                  { value: "FAILED", label: "Failed" },
+                  { value: "PENDING", label: "Pending" },
+                ]}
+              />
             </Filter>
             <SearchActions onClear={handleClear} />
           </div>

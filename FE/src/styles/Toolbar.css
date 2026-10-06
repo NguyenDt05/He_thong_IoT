@@ -72,9 +72,8 @@
     background: #edf7fc;
 }
 
-/* Viền focus hỗ trợ thao tác bằng bàn phím trên nút và ô chọn. */
-.search-actions button:focus-visible,
-.filter-select:focus-visible {
+/* Viền focus cho các nút thao tác bằng bàn phím. */
+.search-actions button:focus-visible {
     outline: 2px solid #23648a;
     outline-offset: 2px;
 }

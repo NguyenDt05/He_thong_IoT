@@ -1,6 +1,10 @@
 const db = require("../db");
 const { formatDateTime } = require("./rowFormat");
 
+function likePattern(value) {
+    return `%${value.replace(/[!%_]/g, (character) => `!${character}`)}%`;
+}
+
 // Tạo điều kiện tìm kiếm theo trường được chọn; giữ bộ lọc type cũ cho API hiện tại.
 function filters(key, type, field = "all") {
     const clauses = [];
@@ -11,22 +15,27 @@ function filters(key, type, field = "all") {
     }
     if (key) {
         const conditions = [];
-        const pattern = `%${key}%`;
+        const pattern = likePattern(key);
         if (field === "all") {
-            conditions.push("s.sensor_name LIKE ?");
-            params.push(pattern);
+            conditions.push("CAST(ds.data_id AS CHAR) LIKE ? ESCAPE '!'");
+            conditions.push("s.sensor_name LIKE ? ESCAPE '!'");
+            params.push(pattern, pattern);
         }
         if (field === "all" || field === "type") {
-            conditions.push("s.sensor_type LIKE ?");
-            conditions.push("(CASE s.sensor_type WHEN 'TEMPERATURE' THEN 'Cảm biến nhiệt độ' WHEN 'HUMIDITY' THEN 'Cảm biến độ ẩm' WHEN 'LIGHT' THEN 'Cảm biến ánh sáng' END) LIKE ?");
+            conditions.push("s.sensor_type LIKE ? ESCAPE '!'");
+            conditions.push("(CASE s.sensor_type WHEN 'TEMPERATURE' THEN 'Cảm biến nhiệt độ' WHEN 'HUMIDITY' THEN 'Cảm biến độ ẩm' WHEN 'LIGHT' THEN 'Cảm biến ánh sáng' END) LIKE ? ESCAPE '!'");
             params.push(pattern, pattern);
         }
         if (field === "all" || field === "datetime") {
-            conditions.push("DATE_FORMAT(ds.created_at, '%d/%m/%Y %H:%i:%s') LIKE ?");
-            params.push(`%${key.replace(/,\s*/, " ")}%`);
+            conditions.push("DATE_FORMAT(ds.created_at, '%d/%m/%Y %H:%i:%s') LIKE ? ESCAPE '!'");
+            params.push(likePattern(key.replace(/,\s*/, " ")));
         }
         if (field === "all" || field === "value") {
-            conditions.push("CAST(ds.value AS CHAR) LIKE ?");
+            conditions.push("CAST(ds.value AS CHAR) LIKE ? ESCAPE '!'");
+            params.push(pattern);
+        }
+        if (field === "all") {
+            conditions.push("CONCAT_WS(' ', CAST(ds.value AS CHAR), s.unit) COLLATE utf8mb4_general_ci LIKE ? ESCAPE '!'");
             params.push(pattern);
         }
         if (conditions.length) clauses.push(`(${conditions.join(" OR ")})`);

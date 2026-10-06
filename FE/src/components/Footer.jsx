@@ -1,4 +1,5 @@
-import "../styles/Footer.css";
+import "./Footer.css";
+import DropdownSelect from "./DropdownSelect";
 
 const MAX_PAGE = 5; // Số trang tối đa hiển thị
 const PAGE_SIZES = [10, 20, 50];
@@ -40,15 +41,15 @@ function Footer({ page = 1, limit = 20, pageSize = limit, total = 0, onPageChang
   return (
     <footer className="footer">
       {/* Số dòng bên trái, tổng bản ghi ở giữa. */}
-      <label className="page-size-control">
+      <div className="page-size-control">
         Số dòng/trang
-        <select
+        <DropdownSelect
+          ariaLabel="Số dòng/trang"
           value={pageSize}
-          onChange={(event) => onPageSizeChange?.(Number(event.target.value))}
-        >
-          {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
-        </select>
-      </label>
+          onChange={onPageSizeChange}
+          options={PAGE_SIZES.map((size) => ({ value: size, label: String(size) }))}
+        />
+      </div>
       <div className="banghi">
         Hiển thị {first}–{last} / {total} bản ghi
       </div>

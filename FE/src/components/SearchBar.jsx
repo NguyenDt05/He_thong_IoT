@@ -1,4 +1,4 @@
-import "../styles/SearchBar.css";
+import "./SearchBar.css";
 
 // Ô nhập có giá trị do trang cha quản lý; nhấn Enter sẽ gửi form tìm kiếm bao ngoài.
 function SearchBar({ value, onChange, placeholder = "Tìm kiếm..." }) {

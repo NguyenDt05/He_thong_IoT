@@ -58,6 +58,15 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
         const first = result.data[0];
         const allFields = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: first.sensorName })}`);
         assert.ok(allFields.data.some((row) => row.dataId === first.dataId));
+        const byId = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: String(first.dataId) })}`);
+        assert.ok(byId.data.some((row) => row.dataId === first.dataId));
+        const byUnit = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: first.unit })}`);
+        assert.ok(byUnit.data.some((row) => row.dataId === first.dataId));
+        const byLiteralPercent = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: "%" })}`);
+        assert.ok(byLiteralPercent.data.every((row) =>
+            [row.dataId, row.sensorName, row.sensorType, row.value, row.unit, row.createdAtText]
+                .some((cell) => String(cell).includes("%")),
+        ));
 
         const typeLabel = {
             TEMPERATURE: "nhiệt độ",
@@ -79,6 +88,9 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
         const byValue = await get(`/api/data-sensor?${new URLSearchParams({ field: "value", key: value })}`);
         assert.ok(byValue.data.some((row) => row.dataId === first.dataId));
         assert.ok(byValue.data.every((row) => String(row.value).includes(value)));
+        const bySensorValue = await get(`/api/data-sensor?${new URLSearchParams({ field: "value", type: first.sensorType, key: value })}`);
+        assert.ok(bySensorValue.data.some((row) => row.dataId === first.dataId));
+        assert.ok(bySensorValue.data.every((row) => row.sensorType === first.sensorType && String(row.value).includes(value)));
     }
 });
 
