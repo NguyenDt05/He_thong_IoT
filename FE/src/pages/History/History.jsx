@@ -26,16 +26,6 @@ function History() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [refreshVersion, setRefreshVersion] = useState(0);
-
-  useEffect(() => {
-    function refreshAfterSwitch() {
-      setPage(1);
-      setRefreshVersion((version) => version + 1);
-    }
-    window.addEventListener("iot-history-updated", refreshAfterSwitch);
-    return () => window.removeEventListener("iot-history-updated", refreshAfterSwitch);
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,7 +59,7 @@ function History() {
     }
     loadHistory();
     return () => controller.abort();
-  }, [page, pageSize, appliedFilters, refreshVersion]);
+  }, [page, pageSize, appliedFilters]);
 
   function handlePageSizeChange(size) {
     setPage(1);

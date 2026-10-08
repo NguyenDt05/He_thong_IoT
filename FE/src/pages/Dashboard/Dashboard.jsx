@@ -426,7 +426,6 @@ function Dashboard() {
 
     try {
       await ghiLichSu_sv(id, seBat ? "ON" : "OFF");
-      window.dispatchEvent(new Event("iot-history-updated"));
     } catch {
       // Công tắc vẫn hiển thị trạng thái trên giao diện nếu chưa lưu được lịch sử.
     } finally {

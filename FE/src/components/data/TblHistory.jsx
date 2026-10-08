@@ -4,10 +4,6 @@ import "./TblHistory.css";
 // Nhãn trạng thái được tách khỏi mã trạng thái dùng trong bộ lọc.
 const statusLabels = { SUCCESS: "Success", FAILED: "Failed", PENDING: "Pending" };
 
-function displayUsername(id) {
-    return Number(id) % 2 === 0 ? "nguyễn văn a" : "thaonguyen";
-}
-
 // Bảng lịch sử nhận danh sách đã lọc từ trang cha và trình bày từng sự kiện.
 function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." }) {
     return (
@@ -34,7 +30,7 @@ function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." 
                     <tr key={item.id}>
                         <td>{item.id}</td>
                         <td>{item.deviceName}</td>
-                        <td>{displayUsername(item.id)}</td>
+                        <td>{item.username}</td>
                         <td style={{textAlign: 'center'}}>{item.action === "ON" ? "Bật" : "Tắt"}</td>
                         <td className="status">
                             <span className={`status-badge status-badge-${item.status.toLowerCase()}`}>
