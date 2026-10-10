@@ -105,6 +105,16 @@
     font-weight: 600;
 }
 
+.sensor-card-meta {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.sensor-card-time {
+    display: block;
+}
+
 /* Thẻ đèn: biểu tượng, tên, trạng thái và công tắc nằm cùng một hàng. */
 .light-card {
     display: flex;
