@@ -11,12 +11,6 @@
     box-sizing: border-box; 
 }
 
-/* Nhãn tùy chọn không tự xuống dòng khi được dùng trong bộ lọc. */
-.filter-label { 
-    white-space: nowrap; 
-    font-size: 14px;
-}
-
 /* Màn hình hẹp: ô chọn giãn theo chiều rộng khung lọc. */
 @media (max-width: 700px) {
     .filter {
