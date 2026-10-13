@@ -1,4 +1,6 @@
-// Giữ tối đa 10 bản ghi thật gần nhất của từng loại, kể cả khi thời gian các loại lệch nhau.
+import { SO_DIEM_HIEN_THI } from "./mockData.js";
+
+// Giữ tối đa 20 bản ghi thật gần nhất của từng loại, kể cả khi thời gian các loại lệch nhau.
 export function gopDuLieuBieuDo(hienTai, ketQua, types) {
   const theoMau = new Map();
   const cacDong = ketQua.flatMap((result, index) =>
@@ -22,7 +24,7 @@ export function gopDuLieuBieuDo(hienTai, ketQua, types) {
     .filter((dong) => dong.sensorType === type)
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
       || Number(b.dataId ?? 0) - Number(a.dataId ?? 0))
-    .slice(0, 10))
+    .slice(0, SO_DIEM_HIEN_THI))
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)
       || a.sensorType.localeCompare(b.sensorType)
       || Number(a.dataId ?? 0) - Number(b.dataId ?? 0));

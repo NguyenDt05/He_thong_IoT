@@ -6,7 +6,7 @@ export const DU_LIEU_MAU = {
 };
 
 export const CHU_KY_MO_PHONG_MS = 2000;
-const SO_DIEM_HIEN_THI = 10;
+export const SO_DIEM_HIEN_THI = 20;
 
 // API trả bản ghi mới nhất trước; phát lại từ bản cũ đến bản mới.
 export function layMauMoPhong(ketQua, types) {
@@ -24,7 +24,7 @@ export function layMauMoPhong(ketQua, types) {
 
     const values = rows.filter((row) => row?.sensorType === type
       && row.value !== null && row.value !== "" && Number.isFinite(Number(row.value)))
-      .slice(0, 15).map((row) => Number(row.value)).reverse();
+      .slice(0, SO_DIEM_HIEN_THI).map((row) => Number(row.value)).reverse();
     if (values.length === 0) {
       throw new Error(`Dữ liệu cảm biến ${type} không hợp lệ`);
     }

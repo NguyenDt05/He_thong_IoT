@@ -9,7 +9,7 @@ import { dinhdang } from "../../utils/formatDate";
 import Thermometer from "../../components/Thermometer";
 import HumidityIcon from "../../components/HumidityIcon";
 import LightIcon from "../../components/LightIcon";
-import { capNhatDuLieuMoPhong, CHU_KY_MO_PHONG_MS, layMauMoPhong } from "./mockData";
+import { capNhatDuLieuMoPhong, CHU_KY_MO_PHONG_MS, layMauMoPhong, SO_DIEM_HIEN_THI } from "./mockData";
 import { gopDuLieuBieuDo } from "./sensorChartData";
 import "./Dashboard.css";
 
@@ -151,7 +151,7 @@ const SensorChart = memo(function SensorChart({ rows }) {
     theoThoiGian.set(time, cacDiem);
   });
 
-  // Nguồn dữ liệu đã giới hạn 10 bản ghi mỗi loại hoặc 10 bước mô phỏng.
+  // Nguồn dữ liệu đã giới hạn 20 bản ghi mỗi loại hoặc 20 bước mô phỏng.
   const duLieu = [...theoThoiGian.entries()].sort(([a], [b]) => a - b)
     .flatMap(([, cacDiem]) => cacDiem);
 
@@ -295,8 +295,7 @@ function Dashboard() {
         return;
       }
       dangTai = true;
-      const limit = SENSOR_MODE === "demo" && !mauMoPhong ? 15 : 10;
-      const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(1, limit, { type: cb.type }, controller.signal));
+      const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(1, SO_DIEM_HIEN_THI, { type: cb.type }, controller.signal));
       const ketQua = await Promise.allSettled(yeuCau);
       dangTai = false;
       if (!dangMoTrang) {

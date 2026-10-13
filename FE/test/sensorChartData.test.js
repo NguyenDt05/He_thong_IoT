@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { capNhatDuLieuMoPhong, CHU_KY_MO_PHONG_MS, DU_LIEU_MAU, layMauMoPhong } from "../src/pages/Dashboard/mockData.js";
+import { capNhatDuLieuMoPhong, CHU_KY_MO_PHONG_MS, DU_LIEU_MAU, layMauMoPhong, SO_DIEM_HIEN_THI } from "../src/pages/Dashboard/mockData.js";
 import { gopDuLieuBieuDo } from "../src/pages/Dashboard/sensorChartData.js";
 
 const types = ["TEMPERATURE", "HUMIDITY", "LIGHT"];
@@ -10,19 +10,19 @@ function result(data, fromCache = false) {
   return { status: "fulfilled", value: { data, fromCache } };
 }
 
-test("DEMO lấy tối đa 15 giá trị BE và quay về đầu sau bước 15", () => {
-  const responses = types.map((type) => result(Array.from({ length: 18 }, (_, index) => ({
+test("DEMO lấy tối đa 20 giá trị BE và quay về đầu sau bước 20", () => {
+  const responses = types.map((type) => result(Array.from({ length: 22 }, (_, index) => ({
     sensorType: type,
     value: index,
     createdAt: new Date(baseTime - index * 1000).toISOString(),
   }))));
   const mau = layMauMoPhong(responses, types);
-  assert.deepEqual(mau.TEMPERATURE, Array.from({ length: 15 }, (_, index) => 14 - index));
+  assert.deepEqual(mau.TEMPERATURE, Array.from({ length: SO_DIEM_HIEN_THI }, (_, index) => SO_DIEM_HIEN_THI - 1 - index));
 
   let lichSu = [];
-  for (let step = 0; step < 16; step += 1) {
+  for (let step = 0; step <= SO_DIEM_HIEN_THI; step += 1) {
     lichSu = capNhatDuLieuMoPhong(lichSu, mau, step, baseTime + step * CHU_KY_MO_PHONG_MS);
-    assert.equal(lichSu.length, Math.min(step + 1, 10) * types.length);
+    assert.equal(lichSu.length, Math.min(step + 1, SO_DIEM_HIEN_THI) * types.length);
   }
   assert.equal(lichSu.at(-1).value, mau.LIGHT[0]);
   assert.deepEqual(lichSu.slice(-3).map((row) => row.value), types.map((type) => mau[type][0]));
@@ -38,16 +38,16 @@ test("DEMO dùng 15 giá trị cố định chỉ khi DB không có bản ghi", 
   assert.throws(() => layMauMoPhong(types.map(() => result([], true)), types));
 });
 
-test("REAL giữ createdAt, tối đa 10 bản ghi mỗi loại và không tự sinh dữ liệu", () => {
-  const responses = types.map((type, typeIndex) => result(Array.from({ length: 12 }, (_, index) => ({
+test("REAL giữ createdAt, tối đa 20 bản ghi mỗi loại và không tự sinh dữ liệu", () => {
+  const responses = types.map((type, typeIndex) => result(Array.from({ length: 22 }, (_, index) => ({
     dataId: typeIndex * 100 + index + 1,
     sensorType: type,
     value: typeIndex * 20 + index,
     createdAt: new Date(baseTime - index * 1000 - typeIndex * 100).toISOString(),
   }))));
   const first = gopDuLieuBieuDo([], responses, types);
-  assert.equal(first.length, 30);
-  types.forEach((type) => assert.equal(first.filter((row) => row.sensorType === type).length, 10));
+  assert.equal(first.length, SO_DIEM_HIEN_THI * types.length);
+  types.forEach((type) => assert.equal(first.filter((row) => row.sensorType === type).length, SO_DIEM_HIEN_THI));
   assert.equal(first.find((row) => row.dataId === 1).createdAt, responses[0].value.data[0].createdAt);
   assert.strictEqual(gopDuLieuBieuDo(first, responses, types), first);
   assert.strictEqual(gopDuLieuBieuDo(first, types.map(() => result([], true)), types), first);
