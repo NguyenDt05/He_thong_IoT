@@ -1,9 +1,3 @@
-export const MOCK_DEVICES = [
-  { deviceId: 1, deviceName: "Đèn 1", chiTrenGiaoDien: true },
-  { deviceId: 2, deviceName: "Đèn 2", chiTrenGiaoDien: true },
-  { deviceId: 3, deviceName: "Đèn 3", chiTrenGiaoDien: true },
-];
-
 // Chỉ dùng khi BE xác nhận loại cảm biến này chưa có bản ghi.
 export const DU_LIEU_MAU = {
   TEMPERATURE: [27.4, 27.1, 26.8, 26.5, 26.2, 26.7, 27.6, 28.8, 29.5, 30.1, 29.8, 29.2, 28.7, 28.1, 27.8],
