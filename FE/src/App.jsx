@@ -5,7 +5,7 @@ import History from "./pages/History/History";
 import Profile from "./pages/Profile/Profile";
 import Dashboard from "./pages/Dashboard/Dashboard";
 
-// Bảng ánh xạ URL với trang tương ứng; URL không có trong bảng sẽ mở Dashboard.
+// Bảng ánh xạ URL
 const pages = {
   "/": Dashboard,
   "/dashboard": Dashboard,

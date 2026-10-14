@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavigationContext, useNavigation } from "./navigationContext";
 
-// Đồng bộ đường dẫn với lịch sử trình duyệt và cung cấp API điều hướng.
 export function Router({ children }) {
   const [pathname, setPathname] = useState(() => window.location.pathname);
 
@@ -13,7 +12,7 @@ export function Router({ children }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Chuyển trang bằng History API và cập nhật trạng thái React.
+  // Chuyển trang
   const navigate = useCallback((to, replace = false) => {
     if (window.location.pathname === to) return;
 
@@ -26,7 +25,6 @@ export function Router({ children }) {
     setPathname(to);
   }, []);
 
-  // Giữ giá trị context ổn định khi đường dẫn và hàm điều hướng không đổi.
   const value = useMemo(() => ({ pathname, navigate }), [pathname, navigate]);
 
   return (
@@ -36,7 +34,6 @@ export function Router({ children }) {
   );
 }
 
-// Liên kết nội bộ giữ hành vi mở tab mới/phím bổ trợ của thẻ a thông thường.
 export function NavigationLink({ to, children, className = "", ...props }) {
   const { pathname, navigate } = useNavigation();
   const isActive = pathname === to || (to === "/" && pathname === "/dashboard");

@@ -273,14 +273,14 @@ function Dashboard() {
   // Lấy dữ liệu cảm biến và tự cập nhật định kỳ
   useEffect(() => {
     let dangMoTrang = true;
-    let dangTai = false;
-    let interval;
-    let mauMoPhong = null;
-    let buocMoPhong = 0;
-    let mocMoPhong = 0;
+    let dangTai = false;    // ktra xử lý request
+    let interval;           // Lưu ID của bộ đếm cập nhật mỗi 2 giây
+    let mauMoPhong = null;  // dl mẫu dể mô phỏng
+    let buocMoPhong = 0;    // Số bước mô phỏng đã hiển thị
+    let mocMoPhong = 0;     // mốc thời gian tạo điểm mô phỏng
     const controller = new AbortController();
 
-    function themDiemMoPhong() {
+    function themDiemMoPhong() { //tạo dl hiển thị ở demo
       if (!mauMoPhong) return;
       const buoc = buocMoPhong;
       const timestamp = mocMoPhong;

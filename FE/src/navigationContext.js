@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-// Nơi chia sẻ đường dẫn hiện tại và hàm chuyển trang cho các thành phần React.
+// đang ở trang nào và chuyển sang trang khác như thế nào
 export const NavigationContext = createContext(null);
 
 // Hook lấy thông tin điều hướng trong phạm vi Router.
