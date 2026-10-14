@@ -1,5 +1,30 @@
 
-import { SO_DIEM_HIEN_THI } from "./mockData.js";
+export const SO_DIEM_HIEN_THI = 20;
+export const KHOANG_TRONG_BIEU_DO_MS = 15000;
+
+// Mỗi thời điểm chỉ có một điểm trên trục X; khoảng ngừng đo được ngắt nét.
+export function taoDiemBieuDo(rows, types, gapMs = KHOANG_TRONG_BIEU_DO_MS) {
+  const frames = new Map();
+  for (const row of rows) {
+    const time = Date.parse(row?.createdAt);
+    if (!types.includes(row?.sensorType) || !Number.isFinite(time)
+      || row.value === null || row.value === "" || !Number.isFinite(Number(row.value))) continue;
+    const frame = frames.get(time) ?? { time };
+    frame[row.sensorType] = Number(row.value);
+    frames.set(time, frame);
+  }
+
+  const points = [...frames.values()].sort((a, b) => a.time - b.time);
+  const display = [];
+  for (const point of points) {
+    const previous = display.at(-1);
+    if (previous && point.time - previous.time > gapMs) {
+      display.push({ time: previous.time + Math.floor((point.time - previous.time) / 2), gap: true });
+    }
+    display.push(point);
+  }
+  return { points, display };
+}
 
 // Xử lý dữ liệu cảm biến đưa lên biểu đồ
 export function gopDuLieuBieuDo(hienTai, ketQua, types) {
@@ -7,12 +32,11 @@ export function gopDuLieuBieuDo(hienTai, ketQua, types) {
   // 1. Tạo Map để loại bỏ bản ghi trùng
   const theoMau = new Map();
 
-  // 2. Lấy dữ liệu API; nếu API lỗi thì giữ dữ liệu cũ của loại đó
+  // 2. Ghép bản đã lưu với bản API; không mất điểm khi mạch ngừng gửi.
   const cacDong = ketQua.flatMap((result, index) =>
     result.status === "fulfilled" && !result.value.fromCache
-      ? result.value.data.filter(
-          (dong) => dong?.sensorType === types[index]
-        )
+      ? [...hienTai.filter((dong) => dong.sensorType === types[index]),
+          ...result.value.data.filter((dong) => dong?.sensorType === types[index])]
       : hienTai.filter(
           (dong) => dong.sensorType === types[index]
         )

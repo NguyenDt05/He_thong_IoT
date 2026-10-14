@@ -5,12 +5,12 @@ import MainLayout from "../../layouts/MainLayout";
 import { layDuLieuCB_sv } from "../../services/dataSensorSV";
 import { layThietBi_sv } from "../../services/deviceSV";
 import { ghiLichSu_sv } from "../../services/historySV";
+import { layTrangThaiMach_sv } from "../../services/hardwareSV";
 import { dinhdang } from "../../utils/formatDate";
 import Thermometer from "../../components/Thermometer";
 import HumidityIcon from "../../components/HumidityIcon";
 import LightIcon from "../../components/LightIcon";
-import { capNhatDuLieuMoPhong, CHU_KY_MO_PHONG_MS, layMauMoPhong, SO_DIEM_HIEN_THI } from "./mockData";
-import { gopDuLieuBieuDo } from "./sensorChartData";
+import { gopDuLieuBieuDo, SO_DIEM_HIEN_THI, taoDiemBieuDo } from "./sensorChartData";
 import "./Dashboard.css";
 
 // Cấu hình cảm biến và thiết bị
@@ -20,10 +20,9 @@ const DS_CAM_BIEN = [
   { type: "LIGHT", title: "Ánh sáng", unit: "%", tone: "light", chartColor: "#e0a62c" },
 ];
 
-const KEY_DU_LIEU_CB = "iot-dashboard-latest-v1";
-const KEY_TRANG_THAI_DEN = "iot-dashboard-light-ui-v1";
+const KEY_DU_LIEU_CB = "iot-dashboard-latest-real-v2";
+const KEY_BIEU_DO = "iot-dashboard-chart-real-v1";
 const THOI_GIAN_CAP_NHAT = 2000;
-const SENSOR_MODE = import.meta.env.VITE_SENSOR_MODE?.toLowerCase() === "demo" ? "demo" : "real";
 const LOAI_CAM_BIEN = DS_CAM_BIEN.map((cb) => cb.type);
 
 const thangTemp = { //thang màu nhiệt độ
@@ -135,62 +134,63 @@ function docDuLieuCBGanNhat() {
   return ketQua;
 }
 
+function docBieuDoGanNhat() {
+  try {
+    const rows = JSON.parse(window.localStorage.getItem(KEY_BIEU_DO));
+    return Array.isArray(rows) ? rows.filter((row) =>
+      LOAI_CAM_BIEN.includes(row?.sensorType)
+      && row.value !== null && row.value !== "" && Number.isFinite(Number(row.value))
+      && Number.isFinite(Date.parse(row.createdAt))) : [];
+  } catch {
+    return [];
+  }
+}
+
 // Biểu đồ dữ liệu cảm biến
 const SensorChart = memo(function SensorChart({ rows }) {
-  const theoThoiGian = new Map(); // Nhóm các loại cảm biến theo thời gian.
-  rows.forEach((dong) => {
-    const time = Date.parse(dong.createdAt);
-    if (!Number.isFinite(time)) {
-      return;
-    }
-
-    const cacDiem = theoThoiGian.get(time) ?? [];
-    const diem = cacDiem.find((item) => item[dong.sensorType] === undefined) ?? { time };
-    diem[dong.sensorType] = Number(dong.value);
-    if (!cacDiem.includes(diem)) cacDiem.push(diem);
-    theoThoiGian.set(time, cacDiem);
-  });
-
-  // Nguồn dữ liệu đã giới hạn 20 bản ghi mỗi loại hoặc 20 bước mô phỏng.
-  const duLieu = [...theoThoiGian.entries()].sort(([a], [b]) => a - b)
-    .flatMap(([, cacDiem]) => cacDiem);
-
-  if (duLieu.length === 0) {
+  const { points, display } = taoDiemBieuDo(rows, LOAI_CAM_BIEN);
+  if (points.length === 0) {
     return <div className="chart-empty">Chưa có dữ liệu</div>;
   }
 
-  const dsThoiGian = duLieu.map((dong) => dong.time);
-  const thoiGianDau = Math.min(...dsThoiGian);
-  const thoiGianCuoi = Math.max(...dsThoiGian);
-  // Lấy 4 mốc thời gian để hiển thị trên trục X, gồm: đầu, 1/3, 2/3 và cuối
-  const mocThoiGian = [...new Set([
-    duLieu[0].time,
-    duLieu[Math.floor((duLieu.length - 1) / 3)].time,
-    duLieu[Math.floor(((duLieu.length - 1) * 2) / 3)].time,
-    duLieu.at(-1).time,
+  const ngayDau = dinhdang(points[0].time).slice(0, 10);
+  const nhieuNgay = points.some((point) => dinhdang(point.time).slice(0, 10) !== ngayDau);
+  function nhanThoiGian(time) {
+    const full = dinhdang(time);
+    return nhieuNgay ? `${full.slice(0, 5)} ${full.slice(11, 16)}` : full.slice(11);
+  }
+  // Lấy tối đa bốn mốc thật để chú thích; các điểm đo luôn được dàn đều.
+  const mocDuKien = [...new Set([
+    points[0].time,
+    points[Math.floor((points.length - 1) / 3)].time,
+    points[Math.floor(((points.length - 1) * 2) / 3)].time,
+    points.at(-1).time,
 ])];
+  const nhanDaCo = new Set();
+  const mocThoiGian = mocDuKien.filter((time) => {
+    const nhan = nhanThoiGian(time);
+    if (nhanDaCo.has(nhan)) return false;
+    nhanDaCo.add(nhan);
+    return true;
+  });
 
   return (
     <div className="dashboard-chart" role="img"
       aria-label="Biểu đồ nhiệt độ, độ ẩm và ánh sáng theo thời gian">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={duLieu} margin={{ top: 16, right: 4, bottom: 4, left: 4 }}>
+        <LineChart data={display} margin={{ top: 16, right: 4, bottom: 4, left: 4 }}>
           <CartesianGrid //Đường lưới
               yAxisId="temperature" //Gắn lưới với trục Y có ID temperature.
               vertical={false}      // Không vẽ lưới dọc.
               stroke="#e6eef2"    // Màu của đường lưới
               strokeDasharray="4 5" /> // Tạo nét đứt, 4px nét vẽ xen kẽ 5px khoảng trống.
-          <XAxis // trục X hiển thị thời gian, nằm dưới cùng
+          <XAxis // Các lần đo cách đều trên màn hình; thời gian thật nằm ở nhãn và tooltip.
             dataKey="time"
-            type="number"
-            domain={
-              thoiGianDau === thoiGianCuoi
-                ? [thoiGianDau - 1, thoiGianCuoi + 1]
-                : [thoiGianDau, thoiGianCuoi]
-            }
+            type="category"
             ticks={mocThoiGian}
-            interval={0} // Hiển thị tất cả các nhãn trục X, không bỏ qua nhãn nào.
-            tickFormatter={(time) => dinhdang(time)}
+            interval="preserveStartEnd"
+            minTickGap={16}
+            tickFormatter={nhanThoiGian}
             tickLine={false}
             axisLine={false}
             tick={{ fill: "#7b8c99", fontSize: 12 }}
@@ -240,12 +240,13 @@ const SensorChart = memo(function SensorChart({ rows }) {
             dataKey={sensor.type} // Chọn trường dữ liệu tương ứng
             name={sensor.title}
             yAxisId={sensor.type === "TEMPERATURE" ? "temperature" : "percent"} // Gắn trục Y tương ứng
-            type="linear" // Sử dụng đường thẳng tuyến tính để nối các điểm dữ liệu
+            type="monotone" // Làm mềm nét vẽ; các giá trị đo không bị thay đổi.
             stroke={sensor.chartColor}
-            strokeWidth={3}
-            dot={{ r: 3, strokeWidth: 2 }} // Tùy chỉnh điểm dữ liệu: bán kính 3px, viền 2px
-            activeDot={{ r: 5 }}           // Tùy chỉnh điểm dữ liệu khi rê chuột: bán kính 5px
-            connectNulls
+            strokeWidth={2.5}
+            dot={points.filter((point) => point[sensor.type] !== undefined).length === 1
+              ? { r: 3, strokeWidth: 2 } : false}
+            activeDot={{ r: 4 }}
+            connectNulls={false} // Không vẽ xuyên qua khoảng thời gian không có số đo.
             isAnimationActive={false}      // Tắt hiệu ứng chuyển động khi vẽ
           />
         ))}
@@ -258,37 +259,25 @@ const SensorChart = memo(function SensorChart({ rows }) {
 // Dashboard chính
 function Dashboard() {
   const [duLieuCB, setDuLieuCB] = useState(docDuLieuCBGanNhat);
-  const [duLieuBieuDo, setDuLieuBieuDo] = useState(null);
-  const [loiBieuDo, setLoiBieuDo] = useState(false);
-  const [trangThaiCamBien, setTrangThaiCamBien] = useState({});
+  const [duLieuBieuDo, setDuLieuBieuDo] = useState(docBieuDoGanNhat);
+  const [trangThaiMach, setTrangThaiMach] = useState("loading");
   const [dsThietBi, setDsThietBi] = useState(null);
   const [loiThietBi, setLoiThietBi] = useState(false);
-  const [trangThaiDen, setTrangThaiDen] = useState(docObject(KEY_TRANG_THAI_DEN));
   const [idDangCapNhat, setIdDangCapNhat] = useState(null);
-  const duLieuHienThi = SENSOR_MODE === "demo"
-    ? Object.fromEntries((duLieuBieuDo ?? []).slice(-LOAI_CAM_BIEN.length)
-      .map((dong) => [dong.sensorType, dong]))
-    : duLieuCB;
+  const [loiDieuKhien, setLoiDieuKhien] = useState("");
+  const mocThoiGianDuLieu = Object.values(duLieuCB).map((dong) => Date.parse(dong.createdAt));
+  const thoiGianDuLieu = mocThoiGianDuLieu.length > 0 ? Math.max(...mocThoiGianDuLieu) : null;
+
+  useEffect(() => {
+    luuObject(KEY_BIEU_DO, duLieuBieuDo);
+  }, [duLieuBieuDo]);
 
   // Lấy dữ liệu cảm biến và tự cập nhật định kỳ
   useEffect(() => {
     let dangMoTrang = true;
     let dangTai = false;    // ktra xử lý request
     let interval;           // Lưu ID của bộ đếm cập nhật mỗi 2 giây
-    let mauMoPhong = null;  // dl mẫu dể mô phỏng
-    let buocMoPhong = 0;    // Số bước mô phỏng đã hiển thị
-    let mocMoPhong = 0;     // mốc thời gian tạo điểm mô phỏng
     const controller = new AbortController();
-
-    function themDiemMoPhong() { //tạo dl hiển thị ở demo
-      if (!mauMoPhong) return;
-      const buoc = buocMoPhong;
-      const timestamp = mocMoPhong;
-      const mau = mauMoPhong;
-      setDuLieuBieuDo((hienTai) => capNhatDuLieuMoPhong(hienTai ?? [], mau, buoc, timestamp));
-      buocMoPhong += 1;
-      mocMoPhong += CHU_KY_MO_PHONG_MS;
-    }
 
     async function capNhatCamBien() {
       if (dangTai) {
@@ -296,19 +285,23 @@ function Dashboard() {
       }
       dangTai = true;
       const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(1, SO_DIEM_HIEN_THI, { type: cb.type }, controller.signal));
-      const ketQua = await Promise.allSettled(yeuCau);
+      const [ketQua, ketQuaMach] = await Promise.all([
+        Promise.allSettled(yeuCau),
+        layTrangThaiMach_sv(controller.signal).then((value) => ({ value })).catch(() => ({ error: true })),
+      ]);
       dangTai = false;
       if (!dangMoTrang) {
         return;
       }
 
       const duLieuMoi = {};
-      const trangThaiMoi = {};
+      const loiAPI = ketQua.some((result) => result.status === "rejected" || result.value.fromCache);
+      setTrangThaiMach(ketQuaMach.error ? "error"
+        : loiAPI ? "data-error" : ketQuaMach.value.connected ? "connected" : "disconnected");
 
       ketQua.forEach((result, index) => {
         const type = DS_CAM_BIEN[index].type;
         if (result.status === "rejected" || result.value.fromCache) {
-          trangThaiMoi[type] = "error";
           return;
         }
 
@@ -320,16 +313,13 @@ function Dashboard() {
           && Number.isFinite(Number(item.value)),
         );
         if (!dong) {
-          trangThaiMoi[type] = result.value.data.length === 0 ? "empty" : "error";
           return;
         }
 
-        trangThaiMoi[type] = "ready";
         duLieuMoi[type] = dong;
       });
-      setTrangThaiCamBien(trangThaiMoi);
 
-      if (SENSOR_MODE === "real" && Object.keys(duLieuMoi).length > 0) {
+      if (Object.keys(duLieuMoi).length > 0) {
         setDuLieuCB((hienTai) => {
           const cacMauMoi = Object.entries(duLieuMoi).filter(([type, dong]) => {
             const cu = hienTai[type];
@@ -347,32 +337,15 @@ function Dashboard() {
         });
       }
 
-      if (SENSOR_MODE === "real") {
-        setLoiBieuDo(Object.values(trangThaiMoi).some((status) => status === "error"));
-        if (ketQua.some((result) => result.status === "fulfilled" && !result.value.fromCache)) {
-          setDuLieuBieuDo((hienTai) => gopDuLieuBieuDo(hienTai ?? [], ketQua, LOAI_CAM_BIEN));
-        }
-      } else if (!mauMoPhong) {
-        try {
-          mauMoPhong = layMauMoPhong(ketQua, LOAI_CAM_BIEN);
-          mocMoPhong = Math.floor(Date.now() / CHU_KY_MO_PHONG_MS) * CHU_KY_MO_PHONG_MS;
-          setLoiBieuDo(false);
-          setTrangThaiCamBien(Object.fromEntries(LOAI_CAM_BIEN.map((type) => [type, "ready"])));
-          themDiemMoPhong();
-        } catch {
-          setLoiBieuDo(true);
-        }
+      if (ketQua.some((result) => result.status === "fulfilled" && !result.value.fromCache)) {
+        setDuLieuBieuDo((hienTai) => gopDuLieuBieuDo(hienTai, ketQua, LOAI_CAM_BIEN));
       }
     }
 
     capNhatCamBien().finally(() => {
       if (!dangMoTrang) return;
       interval = window.setInterval(() => {
-        if (SENSOR_MODE === "demo" && mauMoPhong) {
-          themDiemMoPhong();
-        } else {
-          capNhatCamBien();
-        }
+        capNhatCamBien();
       }, THOI_GIAN_CAP_NHAT);
     });
     return () => {
@@ -385,43 +358,61 @@ function Dashboard() {
   // Lấy danh sách thiết bị
   useEffect(() => {
     const controller = new AbortController();
+    let interval;
+    let dangTai = false;
 
     async function layDanhSachThietBi() {
+      if (dangTai) return;
+      dangTai = true;
       try {
         const ketQua = await layThietBi_sv(controller.signal);
-        const dsDen = ketQua.filter((tb) => Number.isSafeInteger(Number(tb.deviceId)));
+        const dsDen = ketQua.filter((tb) => Number.isSafeInteger(Number(tb.deviceId)) && tb.controllable !== false);
         setDsThietBi(dsDen);
+        setLoiThietBi(false);
       } catch (error) {
         if (error.name !== "AbortError") {
-          setDsThietBi([]);
           setLoiThietBi(true);
         }
+      } finally {
+        dangTai = false;
       }
     }
 
     layDanhSachThietBi();
-    return () => controller.abort();
+    interval = window.setInterval(layDanhSachThietBi, THOI_GIAN_CAP_NHAT);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+    };
   }, []);
 
   // Bật/tắt đèn và ghi lịch sử
   async function batTatDen(thietBi) {
-    if (!thietBi || idDangCapNhat !== null) {
+    if (!thietBi || idDangCapNhat !== null || thietBi.pendingActionId || trangThaiMach !== "connected") {
       return;
     }
 
     const id = thietBi.deviceId;
-    const seBat = trangThaiDen[id] !== true;
-    setTrangThaiDen((hienTai) => {
-      const trangThaiMoi = { ...hienTai, [id]: seBat };
-      luuObject(KEY_TRANG_THAI_DEN, trangThaiMoi);
-      return trangThaiMoi;
-    });
+    const seBat = thietBi.status !== "ON";
     setIdDangCapNhat(id);
+    setLoiDieuKhien("");
 
     try {
-      await ghiLichSu_sv(id, seBat ? "ON" : "OFF");
+      // Chỉ tạo lệnh PENDING; trạng thái thật sẽ đến từ devices sau khi mạch xác nhận.
+      const [ketQuaLenh] = await Promise.allSettled([
+        ghiLichSu_sv(id, seBat ? "ON" : "OFF"),
+        new Promise((resolve) => window.setTimeout(resolve, 1000)),
+      ]);
+      if (ketQuaLenh.status === "rejected") throw ketQuaLenh.reason;
+      setDsThietBi((hienTai) => hienTai?.map((item) =>
+        item.deviceId === id ? { ...item, pendingActionId: ketQuaLenh.value.id } : item));
+      try {
+        setDsThietBi((await layThietBi_sv()).filter((tb) => tb.controllable !== false));
+      } catch {
+        // Lệnh đã được xếp; lần đồng bộ thiết bị tiếp theo sẽ cập nhật trạng thái.
+      }
     } catch {
-      // Công tắc vẫn hiển thị trạng thái trên giao diện nếu chưa lưu được lịch sử.
+      setLoiDieuKhien("Không thể gửi lệnh đến mạch. Vui lòng thử lại.");
     } finally {
       setIdDangCapNhat(null);
     }
@@ -433,10 +424,15 @@ function Dashboard() {
       <div className="dashboard">
         {/* Ba ô nhiệt độ, độ ẩm, ánh sáng. */}
         <section className="dashboard-section">
+          <div className="dashboard-sensor-header">
+            <span>{thoiGianDuLieu === null ? "Chưa có dữ liệu" : `Cập nhật: ${dinhdang(thoiGianDuLieu)}`}</span>
+            {trangThaiMach !== "connected" && trangThaiMach !== "loading" && (
+              <span className="dashboard-hardware-error" role="alert">Lỗi kết nối phần cứng</span>
+            )}
+          </div>
           <div className="dashboard-grid">
             {DS_CAM_BIEN.map((cb) => {
-              const trangThai = trangThaiCamBien[cb.type] ?? "loading";
-              const moiNhat = duLieuHienThi[cb.type];
+              const moiNhat = duLieuCB[cb.type];
               const temperature = cb.type === "TEMPERATURE" && moiNhat ? Number(moiNhat.value) : null;
               const humidity = cb.type === "HUMIDITY" && moiNhat ? Number(moiNhat.value) : null;
               const light = cb.type === "LIGHT" && moiNhat ? Number(moiNhat.value) : null;
@@ -453,12 +449,6 @@ function Dashboard() {
                       <strong>{moiNhat ? Number(moiNhat.value).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : "--"}</strong>
                       <span>{moiNhat?.unit || cb.unit}</span>
                     </div>
-                    <span className="sensor-card-meta" role="status">
-                      {trangThai === "loading" && "Đang tải dữ liệu..."}
-                      {trangThai === "error" && "Lỗi tải dữ liệu cảm biến"}
-                      {trangThai === "empty" && (moiNhat ? "Chưa có dữ liệu mới" : "Chưa có dữ liệu")}
-                      {moiNhat && <span className="sensor-card-time">Dữ liệu lúc {dinhdang(moiNhat.createdAt)}</span>}
-                    </span>
                   </div>
                   <div className="sensor-card-icon">
                     {cb.type === "TEMPERATURE" && <Thermometer temperature={temperature} scale={thangTemp} />}
@@ -476,9 +466,10 @@ function Dashboard() {
           <div className="dashboard-grid dashboard-light-grid">
             {(dsThietBi ?? []).map((thietBi) => {
               const id = thietBi.deviceId;
-              const dangBat = trangThaiDen[id] === true;
+              const dangBat = thietBi.status === "ON";
+              const dangCho = idDangCapNhat === id || Boolean(thietBi.pendingActionId);
               const tenDen = thietBi.deviceName || `Đèn ${id}`;
-              const status = dangBat ? "Đang bật" : "Đang tắt";
+              const status = dangCho ? "Đang chờ mạch..." : dangBat ? "Đang bật" : "Đang tắt";
 
               return (
                 // Thẻ đèn hiển thị biểu tượng, tên, trạng thái và nút gạt điều khiển.
@@ -486,11 +477,13 @@ function Dashboard() {
                   <span className="light-icon" aria-hidden="true">💡</span>
                   <div className="light-card-details">
                     <h3>{tenDen}</h3>
-                    <span>{status}</span>
+                    <span className={`light-card-status${dangCho ? " is-loading" : ""}`} role="status">{status}</span>
                   </div>
                   <button className="light-switch" type="button" role="switch"
-                    aria-label={`Bật tắt ${tenDen}`} aria-checked={dangBat}
-                    disabled={idDangCapNhat !== null} onClick={() => batTatDen(thietBi)}>
+                    aria-label={`Bật tắt ${tenDen}`} aria-checked={dangBat} aria-busy={dangCho}
+                    disabled={idDangCapNhat !== null || Boolean(thietBi.pendingActionId)
+                      || trangThaiMach !== "connected" || loiThietBi}
+                    onClick={() => batTatDen(thietBi)}>
                     <span />
                   </button>
                 </article>
@@ -502,6 +495,7 @@ function Dashboard() {
                 {dsThietBi === null ? "Đang tải thiết bị..." : loiThietBi ? "Lỗi tải thiết bị. Không thể kết nối API." : "Chưa có thiết bị"}
               </p>
             )}
+            {loiDieuKhien && <p className="dashboard-device-empty" role="alert">{loiDieuKhien}</p>}
           </div>
         </section>
 
@@ -509,15 +503,9 @@ function Dashboard() {
         <section className="dashboard-section">
           <div className="dashboard-card chart-card">
             <h2 className="chart-title">Biểu đồ dữ liệu</h2>
-            {loiBieuDo || duLieuBieuDo === null || duLieuBieuDo.length === 0
+            {duLieuBieuDo.length === 0
               ? <div className="chart-empty" role="status">
-                  {loiBieuDo
-                    ? "Lỗi tải dữ liệu cảm biến. Không thể kết nối API."
-                    : Object.values(trangThaiCamBien).length === 0
-                    ? "Đang tải dữ liệu..."
-                    : Object.values(trangThaiCamBien).every((status) => status === "error")
-                      ? "Lỗi tải dữ liệu cảm biến. Không thể kết nối API."
-                      : "Chưa có dữ liệu"}
+                  {trangThaiMach === "loading" ? "Đang tải dữ liệu..." : "Chưa có dữ liệu"}
                 </div>
               : <SensorChart rows={duLieuBieuDo} />}
           </div>

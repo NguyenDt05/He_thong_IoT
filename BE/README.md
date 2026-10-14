@@ -1,14 +1,35 @@
 # IoT backend
 
-The API reads the existing MySQL database configured in `BE/.env`. It does not seed demo rows or issue hardware commands. Required environment variables are `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`; `PORT` defaults to `3001`.
+## Chạy với firmware ESP32 hiện tại
 
-From `BE`, run `npm install` and `npm start`. Run `npm test` for read-only API checks and request validation. Tests that need MySQL are skipped when DB settings are absent. To check the history insert constraints without keeping a row, set `DB_WRITE_ROLLBACK_TEST=1` while running `npm test`; that check inserts inside a transaction and rolls it back.
+Trong `BE/.env`, cấu hình `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `MQTT_URL`, `MQTT_USER`, `MQTT_PASSWORD`. `MQTT_URL` có dạng `mqtt://<địa chỉ broker>:<cổng>` và phải trỏ tới cùng broker với firmware. File `.env` được Git bỏ qua; tham khảo [.env.example](.env.example). Trên máy đang dùng, các thông số MQTT được đặt trong `BE/.env` theo mã Arduino bạn cung cấp.
 
-## API
+```powershell
+cd BE
+npm install
+npm start
+```
 
-- `GET /api/data-sensor?page=1&limit=10&key=&field=all` returns readings from `data_sensor` joined with `sensors`, newest first. `field` accepts `all` (default), `type`, `datetime`, or `value` and selects the column searched by `key`. `all` searches every displayed column: ID, sensor name, type, value (including unit), and displayed time. `type` matches type codes or Vietnamese labels. Dates use `dd/mm/yyyy hh:mm:ss`; older input with a comma is also accepted. The `type` parameter filters by exact sensor type (`TEMPERATURE`, `HUMIDITY`, or `LIGHT`), and can be combined with `field=value` to search that sensor's readings.
-- `GET /api/devices` returns the devices currently present in MySQL. The dashboard switch uses these IDs and names but does not change device status.
-- `GET /api/history?page=1&limit=10&key=&device=&action=&status=` returns rows from `action_history` joined with `devices`, newest first. `key` searches the displayed device name, username, action (`Bật`/`Tắt` or `ON`/`OFF`), status, or date and time. The `device`, `action`, and `status` filters can be combined with `key`. The displayed username alternates between `thaonguyen` and `nguyễn văn a` by row ID.
-- `POST /api/history` with JSON `{ "deviceId": 1, "action": "ON" }` or `OFF` records a dashboard switch interaction and returns the new history row with HTTP 201. It does not update `devices` or control a physical light. The device ID must exist in MySQL.
+Backend tự kết nối lại broker khi mất mạng. Cần chạy **một** tiến trình backend làm cầu nối MQTT để tránh xử lý trùng bản tin. Backend dùng `sensors`, `data_sensor`, `devices`, `action_history`, `users` trong MySQL hiện có; không tự tạo bản ghi mẫu.
 
-List endpoints return `{ data, page, limit, total, totalPages }`. Sensor rows include `dataId`, `sensorId`, `sensorName`, `sensorType`, `unit`, `value`, `createdAt`, and `createdAtText`. History rows include `id`, `deviceId`, `device`, `deviceName`, `username`, `action`, `status`, `createdAt`, and `time`. ISO timestamps are in UTC; display times use Vietnam local time (`dd/mm/yyyy HH:mm:ss`).
+| Topic từ firmware | Dữ liệu | Xử lý backend |
+| --- | --- | --- |
+| `sensor/data` | `{ "temperature": 27.4, "humidity": 68, "light": 35 }` | Ánh xạ ba loại tới `sensor_id` trong bảng `sensors` và ghi đồng thời vào `data_sensor` với thời gian nhận thực. |
+| `device/status` | `{ "actionId": 123, "deviceId": 1, "status": "ON" }` | Đối chiếu lệnh đang chờ; cập nhật `devices.status` theo trạng thái chân ESP32 báo về, đặt lịch sử `SUCCESS` khi khớp lệnh hoặc `FAILED` khi không khớp. |
+| `device/control` | `{ "actionId": 123, "deviceId": 1, "command": "ON" }` | Backend phát lệnh đang chờ mỗi giây cho đến khi mạch phản hồi hoặc lệnh hết hạn. Firmware hiện đã xử lý đúng ba khóa này. |
+
+Firmware gửi cảm biến mỗi 2 giây. `HARDWARE_STALE_MS` mặc định `10000` ms: Dashboard báo ngắt mạch khi không nhận đủ ba loại số đo trong thời gian này. `HARDWARE_COMMAND_TIMEOUT_MS` mặc định `30000` ms: lệnh quá hạn không còn được phát, và phản hồi tới trễ không được xem là thành công. Bản tin MQTT sử dụng QoS 0 như firmware hiện tại; lệnh được phát lại để xử lý trường hợp bản tin bị mất. Firmware dùng `actionId` trong phản hồi để backend ghép đúng lệnh.
+
+`MQTT_DEVICE_IDS` mặc định `1,2`, tương ứng hai LED mà firmware hiện xử lý. Thiết bị thứ ba đã có trong DB nhưng được ẩn khỏi phần điều khiển Dashboard. Khi bạn thêm LED 3 và nhánh `deviceId == 3` trong Arduino, đổi `MQTT_DEVICE_IDS=1,2,3` rồi khởi động lại backend. Mã điều khiển chân của firmware không bị sửa trong repo này.
+
+## API giao diện
+
+- `GET /api/hardware/status` trả `connected`, lần đo cuối của từng loại cảm biến và ngưỡng quá hạn. `connected` chỉ đúng khi cầu nối MQTT vừa nhận và lưu số đo cùng cả ba loại có bản ghi mới. Đây là trạng thái dựa trên dữ liệu, không phải cảm biến phát hiện cắm/rút vật lý.
+- `GET /api/data-sensor?page=1&limit=10&key=&field=all` trả số đo từ `data_sensor` nối với `sensors`, mới nhất trước. `type` lọc theo loại; `field` nhận `all`, `type`, `datetime`, `value`.
+- `GET /api/devices` đọc thiết bị từ MySQL, gồm `status` thật, `controllable` và `pendingActionId` nếu có lệnh đang chờ còn hiệu lực.
+- `POST /api/history` với `{ "deviceId": 1, "action": "ON" }` hoặc `OFF` xếp lệnh `PENDING`, trả `201`. Nếu thiết bị đã có lệnh đang chờ, trả `409`; nếu firmware chưa hỗ trợ `deviceId`, trả `422`; khi mạch không gửi số đo mới, trả `503`.
+- `GET /api/history` đọc lịch sử và tên người dùng từ bảng `users` nếu bản ghi có `user_id`. Bản ghi không có người dùng trả `username: null`, không tạo tên minh họa.
+
+Các API danh sách trả `{ data, page, limit, total, totalPages }`. Thời gian lưu và hiển thị theo giờ Việt Nam. DB hiện không có trường nguồn để phân biệt bản ghi cảm biến thử nghiệm với bản ghi đo thật đã tồn tại; cần xác nhận nguồn trước khi xóa hay lọc chúng.
+
+Chạy `npm test` để kiểm tra API đọc, dữ liệu MQTT và xử lý trạng thái. Các test mặc định không ghi DB; phép thử ghi rồi rollback chỉ chạy khi đặt `DB_WRITE_ROLLBACK_TEST=1`.

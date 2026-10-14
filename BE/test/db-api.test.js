@@ -108,7 +108,7 @@ test("history and device APIs map existing MySQL rows without changing device st
         && ["ON", "OFF"].includes(row.action)
         && ["SUCCESS", "FAILED", "PENDING"].includes(row.status)
         && row.device === `DEVICE_${row.deviceId}`
-        && row.username === (row.id % 2 ? "thaonguyen" : "nguyễn văn a")
+        && (row.username === null || typeof row.username === "string")
         && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(row.time)
         && Number.isFinite(Date.parse(row.createdAt)),
     ));
@@ -133,10 +133,21 @@ test("history and device APIs map existing MySQL rows without changing device st
         assert.ok(byStatus.data.every((row) => row.status === first.status));
     }
 
-    const filtered = await get("/api/history?key=thao");
-    assert.ok(filtered.data.every((row) => row.username === "thaonguyen"));
+    const identified = history.data.find((row) => row.username);
+    if (identified) {
+        const filtered = await get(`/api/history?${new URLSearchParams({ key: identified.username })}`);
+        assert.ok(filtered.data.some((row) => row.id === identified.id));
+    }
     const noControl = await fetch(`${baseUrl}/api/devices/1`, { method: "PATCH" });
     assert.equal(noControl.status, 404);
+});
+
+test("hardware status is available without a connected board", { skip: !hasDatabaseConfig }, async () => {
+    const status = await get("/api/hardware/status");
+    assert.equal(typeof status.connected, "boolean");
+    assert.equal(typeof status.staleAfterMs, "number");
+    assert.ok(Number.isFinite(Date.parse(status.checkedAt)));
+    assert.equal(status.connected, false);
 });
 
 // Yêu cầu bật/tắt sai phải bị chặn trước khi ghi vào cơ sở dữ liệu.
@@ -147,6 +158,12 @@ test("invalid UI action is rejected before any database write", async () => {
         body: JSON.stringify({ deviceId: 1, action: "INVALID" }),
     });
     assert.equal(response.status, 400);
+    const disconnected = await fetch(`${baseUrl}/api/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId: 1, action: "ON" }),
+    });
+    assert.equal(disconnected.status, 503);
 });
 
 // Thử ghi lịch sử trong giao dịch rồi hoàn tác để giữ nguyên dữ liệu thật.
@@ -162,7 +179,7 @@ test("history insert satisfies MySQL constraints and can be rolled back", {
         await connection.beginTransaction();
         inTransaction = true;
         const [result] = await connection.execute(
-            "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, 'ON', 'SUCCESS')",
+            "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, 'ON', 'PENDING')",
             [device.device_id],
         );
         insertedId = result.insertId;
@@ -173,7 +190,7 @@ test("history insert satisfies MySQL constraints and can be rolled back", {
         assert.equal(row.user_id, null);
         assert.equal(row.device_id, device.device_id);
         assert.equal(row.action, "ON");
-        assert.equal(row.status, "SUCCESS");
+        assert.equal(row.status, "PENDING");
         await connection.rollback();
         inTransaction = false;
         const [[{ total }]] = await connection.execute(

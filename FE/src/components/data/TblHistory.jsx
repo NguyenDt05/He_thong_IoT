@@ -30,7 +30,7 @@ function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." 
                     <tr key={item.id}>
                         <td>{item.id}</td>
                         <td>{item.deviceName}</td>
-                        <td>{item.username}</td>
+                        <td>{item.username || "—"}</td>
                         <td style={{textAlign: 'center'}}>{item.action === "ON" ? "Bật" : "Tắt"}</td>
                         <td className="status">
                             <span className={`status-badge status-badge-${item.status.toLowerCase()}`}>

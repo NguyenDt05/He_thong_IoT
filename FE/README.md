@@ -18,11 +18,11 @@ Các lời gọi HTTP nằm trong `src/services/`. `apiConfig.js` chọn gốc A
 
 | Giao diện | Nguồn và cách cập nhật |
 | --- | --- |
-| Dashboard: thẻ cảm biến và biểu đồ | Gọi `GET /api/data-sensor` riêng cho `TEMPERATURE`, `HUMIDITY`, `LIGHT` mỗi 2 giây. Mặc định `FE/.env` đặt `VITE_SENSOR_MODE=demo`: Dashboard phát lại tối đa 15 giá trị lấy từ BE; khi BE trả trang rỗng cho một loại cảm biến, dùng dãy cố định trong `mockData.js` cho loại đó. Nếu đặt `VITE_SENSOR_MODE=real`, Dashboard hiển thị bản ghi thật, giữ tối đa 10 bản ghi mỗi loại trên biểu đồ và lưu giá trị mới nhất trong `localStorage`. Service có thể trả trang API đã lưu khi mất kết nối, nhưng Dashboard báo lỗi nếu không lấy được dữ liệu mới. |
-| Dashboard: danh sách đèn | Gọi `GET /api/devices` một lần khi mở trang. Trong lúc chờ hoặc khi API lỗi, hiển thị thông báo tương ứng; không tạo đèn mẫu. |
-| Dashboard: công tắc đèn | Trạng thái bật/tắt chỉ nằm trên giao diện và trong `localStorage`, không đọc/cập nhật `devices.status`. Mỗi thao tác gửi `POST /api/history` để ghi lịch sử. Nếu POST lỗi, trạng thái trên giao diện vẫn đã đổi. Không có lệnh điều khiển phần cứng. |
-| Dữ liệu cảm biến | Gọi `GET /api/data-sensor` khi mở trang hoặc đổi phân trang/bộ lọc. Trang API đã tải được lưu trong `localStorage` theo truy vấn; bản đã lưu có thể hiện ngay hoặc khi API lỗi. Không dùng `mockData.js`. |
-| Lịch sử hoạt động | Gọi `GET /api/history` khi mở trang hoặc đổi phân trang/bộ lọc; danh sách cho bộ lọc thiết bị đến từ `GET /api/devices`. Không dùng mock ở FE. BE hiện tạo tên người dùng minh họa `thaonguyen` hoặc `nguyễn văn a` từ tính chẵn lẻ của ID bản ghi, không đọc người dùng thật từ DB. |
+| Dashboard: thẻ cảm biến và biểu đồ | Gọi `GET /api/data-sensor` riêng cho `TEMPERATURE`, `HUMIDITY`, `LIGHT` mỗi 2 giây và chỉ dùng bản ghi MySQL. Lưu số đo cuối và tối đa 20 điểm biểu đồ mỗi loại trong `localStorage`; khi mạch ngừng gửi hoặc API lỗi, giữ nguyên các giá trị và biểu đồ đó. Trục X dàn đều các lần đo để tránh ép các điểm khi lịch sử có khoảng trống dài; thời gian thật vẫn hiện trong tooltip và đường được ngắt ở khoảng ngừng đo. `GET /api/hardware/status` điều khiển một thông báo kết nối ở đầu Dashboard. |
+| Dashboard: danh sách đèn | Gọi `GET /api/devices` mỗi 2 giây để lấy trạng thái thật và lệnh đang chờ. |
+| Dashboard: công tắc đèn | Chỉ cho gửi lệnh khi mạch đang kết nối. `POST /api/history` tạo lệnh `PENDING`; nút chờ mạch xác nhận và chỉ đổi trạng thái khi `devices.status` trong DB đổi. |
+| Dữ liệu cảm biến | Gọi `GET /api/data-sensor` khi mở trang hoặc đổi phân trang/bộ lọc. Trang API đã tải được lưu trong `localStorage` theo truy vấn; bản đã lưu có thể hiện ngay hoặc khi API lỗi. |
+| Lịch sử hoạt động | Gọi `GET /api/history` khi mở trang hoặc đổi phân trang/bộ lọc; tên người dùng đến từ bảng `users` nếu có. Bản ghi không có `user_id` hiển thị dấu gạch ngang. |
 | Profile | Thông tin cá nhân và liên kết ghi cố định trong `Profile.jsx`; không gọi API. |
 
-`mockData.js` chỉ được Dashboard dùng khi chạy chế độ demo. Dữ liệu mô phỏng trên giao diện không được ghi vào MySQL.
+Cấu hình cầu nối MQTT cho firmware ESP32 và cách bật LED 3 nằm trong [hướng dẫn backend](../BE/README.md). Backend dùng các topic và khóa JSON của mã Arduino hiện tại.

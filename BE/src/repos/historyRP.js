@@ -1,9 +1,15 @@
 const db = require("../db");
 const { formatDateTime } = require("./rowFormat");
 
-const from = "FROM action_history ah JOIN devices d ON d.device_id = ah.device_id";
+const from = "FROM action_history ah JOIN devices d ON d.device_id = ah.device_id LEFT JOIN users u ON u.user_id = ah.user_id";
+const timeoutSeconds = Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) > 0
+    ? Math.ceil(Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) / 1000) : 30;
+const effectiveStatus = `CASE WHEN ah.status = 'PENDING'
+    AND ah.created_at < DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'), INTERVAL ${timeoutSeconds} SECOND)
+    THEN 'FAILED' ELSE ah.status END`;
 const fields = `ah.action_id AS id, ah.device_id AS deviceId,
-    d.device_name AS deviceName, ah.action, ah.status, ah.created_at AS createdAtLocal`;
+    d.device_name AS deviceName, u.full_name AS username, ah.action,
+    ${effectiveStatus} AS status, ah.created_at AS createdAtLocal`;
 
 // Đổi một dòng MySQL thành các trường hiển thị trong bảng lịch sử.
 function toHistoryRow({ createdAtLocal, deviceId, ...row }) {
@@ -12,7 +18,6 @@ function toHistoryRow({ createdAtLocal, deviceId, ...row }) {
         ...row,
         deviceId,
         device: `DEVICE_${deviceId}`,
-        username: row.id % 2 ? "thaonguyen" : "nguyễn văn a",
         createdAt: iso,
         time: text,
     };
@@ -31,25 +36,22 @@ function filters(key, device, action, status) {
         params.push(action);
     }
     if (status) {
-        clauses.push("ah.status = ?");
+        clauses.push(`${effectiveStatus} = ?`);
         params.push(status);
     }
     if (key) {
         const term = key.toLocaleLowerCase("vi-VN")
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
-        const matchesThao = "thaonguyen".includes(term);
-        const matchesNguyen = "nguyen van a".includes(term);
         const search = [
             "d.device_name LIKE ?",
+            "u.full_name LIKE ?",
             "DATE_FORMAT(ah.created_at, '%d/%m/%Y %H:%i:%s') LIKE ?",
             "LOWER(ah.action) LIKE ?",
-            "LOWER(ah.status) LIKE ?",
+            `LOWER(${effectiveStatus}) LIKE ?`,
         ];
-        params.push(`%${key}%`, `%${key.replace(/,\s*/, " ")}%`, `%${term}%`, `%${term}%`);
+        params.push(`%${key}%`, `%${key}%`, `%${key.replace(/,\s*/, " ")}%`, `%${term}%`, `%${term}%`);
         if ("bat".includes(term)) search.push("ah.action = 'ON'");
         if ("tat".includes(term)) search.push("ah.action = 'OFF'");
-        if (matchesThao) search.push("MOD(ah.action_id, 2) = 1");
-        if (matchesNguyen) search.push("MOD(ah.action_id, 2) = 0");
         clauses.push(`(${search.join(" OR ")})`);
     }
     return { where: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "", params };
@@ -73,21 +75,45 @@ async function countHistory(key, device, action, status) {
     return Number(row.total);
 }
 
-// Lưu thao tác công tắc giao diện rồi trả dòng lịch sử vừa tạo.
+// Xếp yêu cầu điều khiển để mạch lấy và xác nhận; không ghi thành công giả.
 async function recordHistory(deviceId, action) {
-    const [[device]] = await db.execute("SELECT device_id FROM devices WHERE device_id = ?", [deviceId]);
-    if (!device) return null;
-
-    // Thao tác này chỉ được ghi vào lịch sử, không gửi lệnh đến thiết bị thật.
-    const [result] = await db.execute(
-        "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, ?, 'SUCCESS')",
-        [deviceId, action],
-    );
-    const [[row]] = await db.execute(
-        `SELECT ${fields} ${from} WHERE ah.action_id = ?`,
-        [result.insertId],
-    );
-    return toHistoryRow(row);
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [[device]] = await connection.execute("SELECT device_id FROM devices WHERE device_id = ? FOR UPDATE", [deviceId]);
+        if (!device) {
+            await connection.rollback();
+            return null;
+        }
+        const [[pending]] = await connection.execute(
+            `SELECT action_id FROM action_history
+             WHERE device_id = ? AND status = 'PENDING'
+               AND created_at >= DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'), INTERVAL ? SECOND)
+             LIMIT 1`,
+            [deviceId, timeoutSeconds],
+        );
+        if (pending) {
+            await connection.rollback();
+            const error = new Error("Thiết bị đang chờ mạch xác nhận lệnh trước");
+            error.code = "COMMAND_PENDING";
+            throw error;
+        }
+        const [result] = await connection.execute(
+            "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, ?, 'PENDING')",
+            [deviceId, action],
+        );
+        const [[row]] = await connection.execute(
+            `SELECT ${fields} ${from} WHERE ah.action_id = ?`,
+            [result.insertId],
+        );
+        await connection.commit();
+        return toHistoryRow(row);
+    } catch (error) {
+        try { await connection.rollback(); } catch { /* Giao dịch đã hoàn tất. */ }
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
 
 module.exports = { listHistory, countHistory, recordHistory };
