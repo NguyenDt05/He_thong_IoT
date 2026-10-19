@@ -23,6 +23,8 @@ const DS_CAM_BIEN = [
 const KEY_DU_LIEU_CB = "iot-dashboard-latest-real-v2";
 const KEY_BIEU_DO = "iot-dashboard-chart-real-v1";
 const THOI_GIAN_CAP_NHAT = 2000;
+const THOI_GIAN_KIEM_TRA_MACH = 1000;
+const THOI_GIAN_CHO_TRANG_THAI_MACH = 3000;
 const LOAI_CAM_BIEN = DS_CAM_BIEN.map((cb) => cb.type);
 
 const thangTemp = { //thang màu nhiệt độ
@@ -272,6 +274,41 @@ function Dashboard() {
     luuObject(KEY_BIEU_DO, duLieuBieuDo);
   }, [duLieuBieuDo]);
 
+  // Kiểm tra kết nối độc lập với các request dữ liệu để một request cảm biến
+  // chậm không thể giữ nguyên trạng thái "đã kết nối" trên giao diện.
+  useEffect(() => {
+    let dangMoTrang = true;
+    let timer;
+    let controller;
+
+    async function capNhatTrangThaiMach() {
+      controller = new AbortController();
+      const requestTimeout = window.setTimeout(
+        () => controller.abort(), THOI_GIAN_CHO_TRANG_THAI_MACH,
+      );
+      try {
+        const ketQua = await layTrangThaiMach_sv(controller.signal);
+        if (dangMoTrang) {
+          setTrangThaiMach(ketQua.connected ? "connected" : "disconnected");
+        }
+      } catch {
+        if (dangMoTrang) setTrangThaiMach("error");
+      } finally {
+        window.clearTimeout(requestTimeout);
+        if (dangMoTrang) {
+          timer = window.setTimeout(capNhatTrangThaiMach, THOI_GIAN_KIEM_TRA_MACH);
+        }
+      }
+    }
+
+    capNhatTrangThaiMach();
+    return () => {
+      dangMoTrang = false;
+      controller?.abort();
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   // Lấy dữ liệu cảm biến và tự cập nhật định kỳ
   useEffect(() => {
     let dangMoTrang = true;
@@ -285,19 +322,13 @@ function Dashboard() {
       }
       dangTai = true;
       const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(1, SO_DIEM_HIEN_THI, { type: cb.type }, controller.signal));
-      const [ketQua, ketQuaMach] = await Promise.all([
-        Promise.allSettled(yeuCau),
-        layTrangThaiMach_sv(controller.signal).then((value) => ({ value })).catch(() => ({ error: true })),
-      ]);
+      const ketQua = await Promise.allSettled(yeuCau);
       dangTai = false;
       if (!dangMoTrang) {
         return;
       }
 
       const duLieuMoi = {};
-      const loiAPI = ketQua.some((result) => result.status === "rejected" || result.value.fromCache);
-      setTrangThaiMach(ketQuaMach.error ? "error"
-        : loiAPI ? "data-error" : ketQuaMach.value.connected ? "connected" : "disconnected");
 
       ketQua.forEach((result, index) => {
         const type = DS_CAM_BIEN[index].type;

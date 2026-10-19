@@ -4,7 +4,7 @@ const hardware = require("../repos/hardwareRP");
 const SENSOR_TOPIC = "sensor/data";
 const CONTROL_TOPIC = "device/control";
 const STATUS_TOPIC = "device/status";
-const DEVICE_IDS = new Set((process.env.MQTT_DEVICE_IDS || "1,2").split(",")
+const DEVICE_IDS = new Set((process.env.MQTT_DEVICE_IDS || "1,2,3").split(",")
     .map((id) => Number(id.trim())).filter((id) => Number.isSafeInteger(id) && id > 0));
 
 let client = null;
@@ -15,7 +15,7 @@ function isControllableDeviceId(id) {
 }
 
 function isSensorStreamLive(now = Date.now()) {
-    const staleMs = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.HARDWARE_STALE_MS) : 10000;
+    const staleMs = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.HARDWARE_STALE_MS) : 6000;
     return Boolean(client?.connected) && lastSensorMessageAt > 0 && now - lastSensorMessageAt <= staleMs;
 }
 
@@ -40,12 +40,13 @@ function parseSensorMessage(payload, ids) {
 
 function parseDeviceStatus(payload) {
     const message = JSON.parse(payload.toString());
-    if (!message || !Number.isSafeInteger(message.actionId) || message.actionId < 1
+    const actionId = message?.actionId == null || message.actionId === 0 ? null : message.actionId;
+    if (!message || (actionId !== null && (!Number.isSafeInteger(actionId) || actionId < 1))
         || !Number.isSafeInteger(message.deviceId) || message.deviceId < 1
         || !["ON", "OFF"].includes(message.status)) {
         throw new Error("Gói device/status không hợp lệ");
     }
-    return message;
+    return { actionId, deviceId: message.deviceId, status: message.status };
 }
 
 function controlMessage(command) {
@@ -86,7 +87,7 @@ function startMqttBridge() {
         } else if (topic === STATUS_TOPIC) {
             try {
                 const message = parseDeviceStatus(payload);
-                hardware.acknowledgeDeviceStatus(message.actionId, message.deviceId, message.status)
+                hardware.saveDeviceStatus(message.actionId, message.deviceId, message.status)
                     .catch((error) => console.error("Không thể lưu device/status:", error.message));
             } catch (error) {
                 console.error("Bỏ qua device/status:", error.message);

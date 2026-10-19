@@ -15,12 +15,14 @@ Backend tự kết nối lại broker khi mất mạng. Cần chạy **một** t
 | Topic từ firmware | Dữ liệu | Xử lý backend |
 | --- | --- | --- |
 | `sensor/data` | `{ "temperature": 27.4, "humidity": 68, "light": 35 }` | Ánh xạ ba loại tới `sensor_id` trong bảng `sensors` và ghi đồng thời vào `data_sensor` với thời gian nhận thực. |
-| `device/status` | `{ "actionId": 123, "deviceId": 1, "status": "ON" }` | Đối chiếu lệnh đang chờ; cập nhật `devices.status` theo trạng thái chân ESP32 báo về, đặt lịch sử `SUCCESS` khi khớp lệnh hoặc `FAILED` khi không khớp. |
+| `device/status` | `{ "actionId": 123, "deviceId": 1, "status": "ON" }` hoặc `{ "deviceId": 1, "status": "ON" }` | Luôn cập nhật `devices.status` theo trạng thái chân ESP32 báo về. `actionId` là tùy chọn và chỉ dùng để đặt lịch sử `SUCCESS` hoặc `FAILED` khi phản hồi một lệnh từ Dashboard. |
 | `device/control` | `{ "actionId": 123, "deviceId": 1, "command": "ON" }` | Backend phát lệnh đang chờ mỗi giây cho đến khi mạch phản hồi hoặc lệnh hết hạn. Firmware hiện đã xử lý đúng ba khóa này. |
 
-Firmware gửi cảm biến mỗi 2 giây. `HARDWARE_STALE_MS` mặc định `10000` ms: Dashboard báo ngắt mạch khi không nhận đủ ba loại số đo trong thời gian này. `HARDWARE_COMMAND_TIMEOUT_MS` mặc định `30000` ms: lệnh quá hạn không còn được phát, và phản hồi tới trễ không được xem là thành công. Bản tin MQTT sử dụng QoS 0 như firmware hiện tại; lệnh được phát lại để xử lý trường hợp bản tin bị mất. Firmware dùng `actionId` trong phản hồi để backend ghép đúng lệnh.
+Firmware gửi cảm biến mỗi 2 giây. `HARDWARE_STALE_MS` mặc định `6000` ms: Dashboard kiểm tra trạng thái riêng mỗi giây và báo ngắt mạch khi không nhận đủ ba loại số đo trong thời gian này. `HARDWARE_COMMAND_TIMEOUT_MS` mặc định `30000` ms: lệnh quá hạn không còn được phát, và phản hồi tới trễ không được xem là thành công. Bản tin MQTT sử dụng QoS 0 như firmware hiện tại; lệnh được phát lại để xử lý trường hợp bản tin bị mất. Firmware dùng `actionId` trong phản hồi để backend ghép đúng lệnh.
 
-`MQTT_DEVICE_IDS` mặc định `1,2`, tương ứng hai LED mà firmware hiện xử lý. Thiết bị thứ ba đã có trong DB nhưng được ẩn khỏi phần điều khiển Dashboard. Khi bạn thêm LED 3 và nhánh `deviceId == 3` trong Arduino, đổi `MQTT_DEVICE_IDS=1,2,3` rồi khởi động lại backend. Mã điều khiển chân của firmware không bị sửa trong repo này.
+Sau mọi thay đổi trạng thái LED, kể cả lệnh nhận trực tiếp từ terminal, firmware phải phát `device/status`. Khi kết nối lại MQTT, firmware nên phát lại trạng thái của cả ba LED để backend đồng bộ trạng thái vật lý hiện tại trước khi Dashboard đọc API.
+
+`MQTT_DEVICE_IDS` mặc định `1,2,3`, tương ứng ba LED mà firmware xử lý. Dashboard chỉ hiển thị các thiết bị có ID nằm trong danh sách này. Sau khi thay đổi cấu hình, cần khởi động lại backend để nạp danh sách mới.
 
 ## API giao diện
 

@@ -18,7 +18,7 @@ Các lời gọi HTTP nằm trong `src/services/`. `apiConfig.js` chọn gốc A
 
 | Giao diện | Nguồn và cách cập nhật |
 | --- | --- |
-| Dashboard: thẻ cảm biến và biểu đồ | Gọi `GET /api/data-sensor` riêng cho `TEMPERATURE`, `HUMIDITY`, `LIGHT` mỗi 2 giây và chỉ dùng bản ghi MySQL. Lưu số đo cuối và tối đa 20 điểm biểu đồ mỗi loại trong `localStorage`; khi mạch ngừng gửi hoặc API lỗi, giữ nguyên các giá trị và biểu đồ đó. Trục X dàn đều các lần đo để tránh ép các điểm khi lịch sử có khoảng trống dài; thời gian thật vẫn hiện trong tooltip và đường được ngắt ở khoảng ngừng đo. `GET /api/hardware/status` điều khiển một thông báo kết nối ở đầu Dashboard. |
+| Dashboard: thẻ cảm biến và biểu đồ | Gọi `GET /api/data-sensor` riêng cho `TEMPERATURE`, `HUMIDITY`, `LIGHT` mỗi 2 giây và chỉ dùng bản ghi MySQL. Lưu số đo cuối và tối đa 20 điểm biểu đồ mỗi loại trong `localStorage`; khi mạch ngừng gửi hoặc API lỗi, giữ nguyên các giá trị và biểu đồ đó. Trục X dàn đều các lần đo để tránh ép các điểm khi lịch sử có khoảng trống dài; thời gian thật vẫn hiện trong tooltip và đường được ngắt ở khoảng ngừng đo. Gọi `GET /api/hardware/status` độc lập mỗi giây để cập nhật thông báo kết nối ngay cả khi request dữ liệu cảm biến bị chậm. |
 | Dashboard: danh sách đèn | Gọi `GET /api/devices` mỗi 2 giây để lấy trạng thái thật và lệnh đang chờ. |
 | Dashboard: công tắc đèn | Chỉ cho gửi lệnh khi mạch đang kết nối. `POST /api/history` tạo lệnh `PENDING`; nút chờ mạch xác nhận và chỉ đổi trạng thái khi `devices.status` trong DB đổi. |
 | Dữ liệu cảm biến | Gọi `GET /api/data-sensor` khi mở trang hoặc đổi phân trang/bộ lọc. Trang API đã tải được lưu trong `localStorage` theo truy vấn; bản đã lưu có thể hiện ngay hoặc khi API lỗi. |

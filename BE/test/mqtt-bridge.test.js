@@ -14,10 +14,15 @@ test("MQTT sensor/data dùng đúng ba trường firmware và sensor_id từ DB"
     assert.throws(() => parseSensorMessage(Buffer.from('{"temperature":27.4,"humidity":null,"light":35}'), ids));
 });
 
-test("MQTT device/status chỉ nhận phản hồi có actionId, deviceId và trạng thái chân hợp lệ", () => {
+test("MQTT device/status nhận cả xác nhận lệnh và trạng thái tự phát từ mạch", () => {
     assert.deepEqual(parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":1,"status":"ON"}')),
         { actionId: 12, deviceId: 1, status: "ON" });
+    assert.deepEqual(parseDeviceStatus(Buffer.from('{"deviceId":1,"status":"OFF"}')),
+        { actionId: null, deviceId: 1, status: "OFF" });
+    assert.deepEqual(parseDeviceStatus(Buffer.from('{"actionId":0,"deviceId":1,"status":"ON"}')),
+        { actionId: null, deviceId: 1, status: "ON" });
     assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":1,"status":""}')));
+    assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":"12","deviceId":1,"status":"ON"}')));
     assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":0,"status":"ON"}')));
     assert.equal(isControllableDeviceId(1), true);
     assert.equal(isControllableDeviceId(0), false);

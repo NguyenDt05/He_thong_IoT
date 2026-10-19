@@ -2,7 +2,7 @@ const db = require("../db");
 const { formatDateTime } = require("./rowFormat");
 
 const SENSOR_TYPES = ["TEMPERATURE", "HUMIDITY", "LIGHT"];
-const STALE_MS = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.HARDWARE_STALE_MS) : 10000;
+const STALE_MS = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.HARDWARE_STALE_MS) : 6000;
 const COMMAND_TIMEOUT_SECONDS = Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) > 0
     ? Math.ceil(Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) / 1000) : 30;
 
@@ -82,32 +82,44 @@ async function pendingCommands() {
     return rows;
 }
 
-async function acknowledgeDeviceStatus(id, deviceId, physicalStatus) {
+// Luôn đồng bộ trạng thái chân vào devices. actionId chỉ dùng để đối chiếu
+// lịch sử khi trạng thái là phản hồi của một lệnh do Dashboard tạo.
+async function saveDeviceStatus(id, deviceId, physicalStatus) {
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
-        const [[reference]] = await connection.execute("SELECT device_id FROM action_history WHERE action_id = ?", [id]);
-        if (!reference || reference.device_id !== deviceId) {
+        const [[device]] = await connection.execute(
+            "SELECT device_id FROM devices WHERE device_id = ? FOR UPDATE", [deviceId],
+        );
+        if (!device) {
             await connection.rollback();
             return null;
         }
-        await connection.execute("SELECT device_id FROM devices WHERE device_id = ? FOR UPDATE", [reference.device_id]);
-        const [[command]] = await connection.execute(
-            `SELECT action_id, device_id, action, status,
-                    created_at < DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'), INTERVAL ? SECOND) AS expired
-             FROM action_history WHERE action_id = ? FOR UPDATE`, [COMMAND_TIMEOUT_SECONDS, id],
-        );
-        if (command.status === "PENDING" && !command.expired) {
-            const finalStatus = command.action === physicalStatus ? "SUCCESS" : "FAILED";
-            await connection.execute("UPDATE action_history SET status = ? WHERE action_id = ?", [finalStatus, id]);
-            await connection.execute("UPDATE devices SET status = ? WHERE device_id = ?", [physicalStatus, command.device_id]);
-            command.status = finalStatus;
-        } else if (command.status === "PENDING" && command.expired) {
-            await connection.execute("UPDATE action_history SET status = 'FAILED' WHERE action_id = ?", [id]);
-            command.status = "FAILED";
+
+        await connection.execute("UPDATE devices SET status = ? WHERE device_id = ?", [physicalStatus, deviceId]);
+
+        let commandStatus = null;
+        if (id !== null) {
+            const [[command]] = await connection.execute(
+                `SELECT action_id, device_id, action, status,
+                        created_at < DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'), INTERVAL ? SECOND) AS expired
+                 FROM action_history WHERE action_id = ? AND device_id = ? FOR UPDATE`,
+                [COMMAND_TIMEOUT_SECONDS, id, deviceId],
+            );
+            if (command?.status === "PENDING" && !command.expired) {
+                commandStatus = command.action === physicalStatus ? "SUCCESS" : "FAILED";
+                await connection.execute(
+                    "UPDATE action_history SET status = ? WHERE action_id = ?", [commandStatus, id],
+                );
+            } else if (command?.status === "PENDING" && command.expired) {
+                commandStatus = "FAILED";
+                await connection.execute("UPDATE action_history SET status = 'FAILED' WHERE action_id = ?", [id]);
+            } else if (command) {
+                commandStatus = command.status;
+            }
         }
         await connection.commit();
-        return { id, status: command.status };
+        return { id, deviceId, physicalStatus, status: commandStatus };
     } catch (error) {
         try { await connection.rollback(); } catch { /* Giao dịch đã hoàn tất. */ }
         throw error;
@@ -116,4 +128,4 @@ async function acknowledgeDeviceStatus(id, deviceId, physicalStatus) {
     }
 }
 
-module.exports = { SENSOR_TYPES, hardwareStatus, latestReadings, sensorIds, saveReadings, pendingCommands, acknowledgeDeviceStatus };
+module.exports = { SENSOR_TYPES, hardwareStatus, latestReadings, sensorIds, saveReadings, pendingCommands, saveDeviceStatus };
