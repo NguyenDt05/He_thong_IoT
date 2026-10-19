@@ -8,7 +8,7 @@ function positiveInteger(value, fallback) {
 function normalizePagination(page, limit) {
     return {
         page: Math.min(positiveInteger(page, 1), 100_000),
-        limit: Math.min(positiveInteger(limit, 10), 100),
+        limit: Math.min(positiveInteger(limit, 20), 100),
     };
 }
 

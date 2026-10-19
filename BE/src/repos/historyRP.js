@@ -35,6 +35,23 @@ const fields = `
     ah.created_at AS createdAtLocal
 `;
 
+// Ghi trạng thái FAILED thật vào database cho các lệnh đã quá thời gian chờ.
+async function failExpiredPending(executor = db, deviceId = null) {
+    const deviceClause = deviceId === null ? "" : " AND device_id = ?";
+    const params = deviceId === null ? [timeoutSeconds] : [timeoutSeconds, deviceId];
+
+    const [result] = await executor.execute(
+        `UPDATE action_history
+         SET status = 'FAILED'
+         WHERE status = 'PENDING'
+           AND created_at < DATE_SUB(${localNow}, INTERVAL ? SECOND)
+           ${deviceClause}`,
+        params
+    );
+
+    return result.affectedRows;
+}
+
 // Chuẩn hóa dữ liệu lịch sử trả về Frontend.
 function toHistoryRow({ createdAtLocal, ...row }) {
     const { iso, text } = formatDateTime(createdAtLocal);
@@ -117,6 +134,8 @@ function filters(key, deviceId, action, status) {
 
 // Lấy danh sách lịch sử theo bộ lọc, mới nhất trước.
 async function listHistory(key, deviceId, action, status, limit, offset) {
+    await failExpiredPending();
+
     const { where, params } = filters(key, deviceId, action, status);
 
     const [rows] = await db.execute(
@@ -158,12 +177,14 @@ async function recordHistory(deviceId, action) {
             return null;
         }
 
+        // Đồng bộ lệnh cũ trước khi kiểm tra xem thiết bị còn lệnh đang chờ hay không.
+        await failExpiredPending(connection, deviceId);
+
         const [[pending]] = await connection.execute(
             `SELECT action_id FROM action_history
              WHERE device_id = ? AND status = 'PENDING'
-               AND created_at >= DATE_SUB(${localNow}, INTERVAL ? SECOND)
              LIMIT 1`,
-            [deviceId, timeoutSeconds]
+            [deviceId]
         );
 
         if (pending) {

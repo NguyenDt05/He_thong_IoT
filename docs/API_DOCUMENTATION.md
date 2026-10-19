@@ -33,9 +33,9 @@ Luồng lớp thông thường là Route → Controller → Service → Reposito
 | Tham số | Mặc định | Giới hạn | Khi không hợp lệ |
 | --- | ---: | ---: | --- |
 | `page` | `1` | tối đa `100000` | trở về `1` |
-| `limit` | `10` | tối đa `100` | trở về `10` |
+| `limit` | `20` | tối đa `100` | trở về `20` |
 
-Giá trị hợp lệ phải chuyển được thành số nguyên dương an toàn. Ví dụ `limit=999` được chặn thành `100`, còn `limit=abc` trở về `10`.
+Giá trị hợp lệ phải chuyển được thành số nguyên dương an toàn. Ví dụ `limit=999` được chặn thành `100`, còn `limit=abc` trở về `20`.
 
 Response phân trang có dạng:
 
@@ -43,7 +43,7 @@ Response phân trang có dạng:
 {
   "data": [],
   "page": 1,
-  "limit": 10,
+  "limit": 20,
   "total": 0,
   "totalPages": 0
 }
@@ -70,7 +70,7 @@ Lấy dữ liệu đo mới nhất trước, JOIN bảng `data_sensor` với `se
 | Tên | Kiểu | Bắt buộc | Giá trị/quy tắc | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | `page` | string biểu diễn integer | Không | mặc định `1`, tối đa `100000` | Trang cần lấy. |
-| `limit` | string biểu diễn integer | Không | mặc định `10`, tối đa `100` | Số dòng mỗi trang. |
+| `limit` | string biểu diễn integer | Không | mặc định `20`, tối đa `100` | Số dòng mỗi trang. |
 | `key` | string | Không | được `trim()` | Từ khóa tìm kiếm. Chuỗi rỗng không tạo điều kiện tìm kiếm. |
 | `criterion` | string | Không | `all`, `temperature`, `humidity`, `light`, `datetime`; mặc định `all` | Tiêu chí tìm kiếm tương ứng trực tiếp với lựa chọn trên giao diện. Không phân biệt chữ hoa/thường; giá trị khác tự trở về `all`. |
 
@@ -108,9 +108,9 @@ Response thực tế đã được xác nhận bằng test và gọi local:
     }
   ],
   "page": 1,
-  "limit": 1,
+  "limit": 20,
   "total": 1780,
-  "totalPages": 1780
+  "totalPages": 89
 }
 ```
 
@@ -200,13 +200,13 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
 | Tên | Kiểu | Bắt buộc | Giá trị FE gửi | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | `page` | integer string | Không | `1...` | Trang cần lấy. |
-| `limit` | integer string | Không | `10`, `20`, `50` | Số dòng/trang; backend cho tối đa `100`. |
+| `limit` | integer string | Không | `10`, `20`, `50`; mặc định `20` | Số dòng/trang; backend cho tối đa `100`. |
 | `key` | string | Không | nội dung tự do | Tìm tên thiết bị, tên người dùng, thời gian, action/status; hỗ trợ từ tiếng Việt “bật”, “tắt” sau khi bỏ dấu. |
 | `deviceId` | integer string | Không | ID thiết bị, ví dụ `3` | Lọc chính xác theo `action_history.device_id`; giá trị phải là số nguyên dương an toàn. |
 | `action` | string | Không | `ON`, `OFF` | So sánh chính xác với `action_history.action`. Backend không validate query enum. |
 | `status` | string | Không | `SUCCESS`, `FAILED`, `PENDING` | So sánh với trạng thái hiệu dụng. Backend không validate query enum. |
 
-“Trạng thái hiệu dụng” là `FAILED` nếu bản ghi trong DB vẫn là `PENDING` nhưng đã quá `HARDWARE_COMMAND_TIMEOUT_MS`; phép SELECT này không tự cập nhật dòng DB.
+Lệnh `PENDING` quá `HARDWARE_COMMAND_TIMEOUT_MS` được cập nhật thành `FAILED` trong DB trước khi backend đọc lịch sử hoặc tạo lệnh mới.
 
 #### Success response — `200 OK`
 
@@ -225,9 +225,9 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
     }
   ],
   "page": 1,
-  "limit": 1,
+  "limit": 20,
   "total": 851,
-  "totalPages": 851
+  "totalPages": 43
 }
 ```
 
@@ -247,7 +247,7 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
 
 | Bảng | Thao tác | Vai trò |
 | --- | --- | --- |
-| `action_history` | SELECT, COUNT | Nguồn lịch sử, action, status và thời gian. |
+| `action_history` | SELECT, COUNT, UPDATE | Nguồn lịch sử, action, status và thời gian; cập nhật lệnh quá hạn thành `FAILED`. |
 | `devices` | INNER JOIN | Lấy tên thiết bị; lịch sử có device không tồn tại sẽ không xuất hiện. |
 | `users` | LEFT JOIN | Lấy `full_name`; cho phép `username: null`. |
 

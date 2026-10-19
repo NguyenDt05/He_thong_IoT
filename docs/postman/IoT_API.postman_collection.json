@@ -41,7 +41,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/data-sensor?page=1&limit=10",
+              "raw": "{{baseUrl}}/api/data-sensor?page=1",
               "host": ["{{baseUrl}}"],
               "path": ["api", "data-sensor"],
               "query": [
@@ -49,11 +49,6 @@
                   "key": "page",
                   "value": "1",
                   "description": "Số nguyên dương; mặc định 1, tối đa 100000."
-                },
-                {
-                  "key": "limit",
-                  "value": "10",
-                  "description": "Số nguyên dương; mặc định 10, tối đa 100."
                 },
                 {
                   "key": "key",
@@ -85,7 +80,7 @@
                   "  pm.expect(body.data).to.be.an('array');",
                   "  ['page', 'limit', 'total', 'totalPages'].forEach((key) => pm.expect(body[key], key).to.be.a('number'));",
                   "  pm.expect(body.page).to.eql(1);",
-                  "  pm.expect(body.limit).to.eql(10);",
+                  "  pm.expect(body.limit).to.eql(20);",
                   "  pm.expect(body.totalPages).to.eql(Math.ceil(body.total / body.limit));",
                   "});",
                   "pm.test('Every sensor row has required fields and types', () => {",
@@ -242,12 +237,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/history?page=1&limit=10",
+              "raw": "{{baseUrl}}/api/history?page=1",
               "host": ["{{baseUrl}}"],
               "path": ["api", "history"],
               "query": [
                 { "key": "page", "value": "1", "description": "Mặc định 1, tối đa 100000." },
-                { "key": "limit", "value": "10", "description": "Mặc định 10, tối đa 100." },
                 { "key": "key", "value": "LED", "description": "Tìm tên thiết bị/người dùng/action/status/thời gian.", "disabled": true },
                 { "key": "deviceId", "value": "1", "description": "ID thiết bị dạng số nguyên dương.", "disabled": true },
                 { "key": "action", "value": "ON", "description": "ON hoặc OFF.", "disabled": true },
@@ -269,7 +263,7 @@
                   "  pm.expect(body).to.include.all.keys('data', 'page', 'limit', 'total', 'totalPages');",
                   "  pm.expect(body.data).to.be.an('array');",
                   "  pm.expect(body.page).to.eql(1);",
-                  "  pm.expect(body.limit).to.eql(10);",
+                  "  pm.expect(body.limit).to.eql(20);",
                   "  pm.expect(body.totalPages).to.eql(Math.ceil(body.total / body.limit));",
                   "});",
                   "pm.test('Every history row has required fields and types', () => {",

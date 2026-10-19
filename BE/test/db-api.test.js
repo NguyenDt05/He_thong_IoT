@@ -32,11 +32,12 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
     const [[latest]] = await db.execute(
         "SELECT data_id AS dataId FROM data_sensor ORDER BY created_at DESC, data_id DESC LIMIT 1",
     );
-    const result = await get("/api/data-sensor?page=1&limit=10");
+    const result = await get("/api/data-sensor?page=1");
     assert.equal(result.total, total);
-    assert.equal(result.data.length, Math.min(10, total));
+    assert.equal(result.limit, 20);
+    assert.equal(result.data.length, Math.min(20, total));
     assert.equal(result.data[0]?.dataId, latest?.dataId);
-    assert.equal(result.totalPages, Math.ceil(total / 10));
+    assert.equal(result.totalPages, Math.ceil(total / 20));
     assert.ok(result.data.every((row) =>
         Number.isSafeInteger(row.dataId)
         && Number.isSafeInteger(row.sensorId)
@@ -100,7 +101,7 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
 test("history and device APIs map existing MySQL rows without changing device state", { skip: !hasDatabaseConfig }, async () => {
     const [[{ total }]] = await db.execute("SELECT COUNT(*) AS total FROM action_history");
     const devices = await get("/api/devices");
-    const history = await get("/api/history?limit=20");
+    const history = await get("/api/history");
     assert.ok(Array.isArray(devices));
     assert.ok(devices.every((row) =>
         Number.isSafeInteger(row.deviceId)
@@ -108,6 +109,7 @@ test("history and device APIs map existing MySQL rows without changing device st
         && !Object.hasOwn(row, "controllable"),
     ));
     assert.equal(history.total, total);
+    assert.equal(history.limit, 20);
     assert.ok(history.data.every((row) =>
         Number.isSafeInteger(row.id)
         && typeof row.deviceName === "string"
