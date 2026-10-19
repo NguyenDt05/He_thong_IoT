@@ -37,7 +37,7 @@ function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." 
                                 {statusLabels[item.status]}
                             </span>
                         </td>
-                        <td>{item.time?.replace(/,\s*/, " ") || dinhdang(item.createdAt)}</td>
+                        <td>{item.createdAtText || dinhdang(item.createdAt)}</td>
                     </tr>
                 ))}
             </tbody>

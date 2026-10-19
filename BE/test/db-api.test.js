@@ -46,23 +46,23 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
         &&
         Number.isFinite(row.value)
         && Number.isFinite(Date.parse(row.createdAt))
-        && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(row.createdAtText),
+        && /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}$/.test(row.createdAtText),
     ));
 
-    const filtered = await get("/api/data-sensor?type=TEMPERATURE&limit=100");
+    const filtered = await get("/api/data-sensor?criterion=temperature&limit=100");
     assert.ok(filtered.data.every((row) => row.sensorType === "TEMPERATURE"));
     const pageTwo = await get("/api/data-sensor?page=2&limit=10");
     assert.equal(pageTwo.data[0]?.dataId, (await get("/api/data-sensor?limit=20")).data[10]?.dataId);
 
     if (result.data.length) {
         const first = result.data[0];
-        const allFields = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: first.sensorName })}`);
+        const allFields = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "all", key: first.sensorName })}`);
         assert.ok(allFields.data.some((row) => row.dataId === first.dataId));
-        const byId = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: String(first.dataId) })}`);
+        const byId = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "all", key: String(first.dataId) })}`);
         assert.ok(byId.data.some((row) => row.dataId === first.dataId));
-        const byUnit = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: first.unit })}`);
+        const byUnit = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "all", key: first.unit })}`);
         assert.ok(byUnit.data.some((row) => row.dataId === first.dataId));
-        const byLiteralPercent = await get(`/api/data-sensor?${new URLSearchParams({ field: "all", key: "%" })}`);
+        const byLiteralPercent = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "all", key: "%" })}`);
         assert.ok(byLiteralPercent.data.every((row) =>
             [row.dataId, row.sensorName, row.sensorType, row.value, row.unit, row.createdAtText]
                 .some((cell) => String(cell).includes("%")),
@@ -73,22 +73,24 @@ test("sensor API reads and pages existing MySQL rows", { skip: !hasDatabaseConfi
             HUMIDITY: "độ ẩm",
             LIGHT: "ánh sáng",
         }[first.sensorType];
-        const byType = await get(`/api/data-sensor?${new URLSearchParams({ field: "type", key: typeLabel })}`);
+        const byType = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "all", key: typeLabel })}`);
         assert.ok(byType.data.some((row) => row.dataId === first.dataId));
         assert.ok(byType.data.every((row) => row.sensorType === first.sensorType));
 
         const date = first.createdAtText.slice(0, 10);
-        const byDate = await get(`/api/data-sensor?${new URLSearchParams({ field: "datetime", key: date })}`);
+        const byDate = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "datetime", key: date })}`);
         assert.ok(byDate.data.some((row) => row.dataId === first.dataId));
         assert.ok(byDate.data.every((row) => row.createdAtText.startsWith(date)));
-        const byFullDate = await get(`/api/data-sensor?${new URLSearchParams({ field: "datetime", key: first.createdAtText })}`);
+        const byFullDate = await get(`/api/data-sensor?${new URLSearchParams({ criterion: "datetime", key: first.createdAtText })}`);
         assert.ok(byFullDate.data.some((row) => row.dataId === first.dataId));
 
         const value = String(first.value);
-        const byValue = await get(`/api/data-sensor?${new URLSearchParams({ field: "value", key: value })}`);
-        assert.ok(byValue.data.some((row) => row.dataId === first.dataId));
-        assert.ok(byValue.data.every((row) => String(row.value).includes(value)));
-        const bySensorValue = await get(`/api/data-sensor?${new URLSearchParams({ field: "value", type: first.sensorType, key: value })}`);
+        const criterion = {
+            TEMPERATURE: "temperature",
+            HUMIDITY: "humidity",
+            LIGHT: "light",
+        }[first.sensorType];
+        const bySensorValue = await get(`/api/data-sensor?${new URLSearchParams({ criterion, key: value })}`);
         assert.ok(bySensorValue.data.some((row) => row.dataId === first.dataId));
         assert.ok(bySensorValue.data.every((row) => row.sensorType === first.sensorType && String(row.value).includes(value)));
     }
@@ -100,27 +102,42 @@ test("history and device APIs map existing MySQL rows without changing device st
     const devices = await get("/api/devices");
     const history = await get("/api/history?limit=20");
     assert.ok(Array.isArray(devices));
-    assert.ok(devices.every((row) => Number.isSafeInteger(row.deviceId) && row.deviceName));
+    assert.ok(devices.every((row) =>
+        Number.isSafeInteger(row.deviceId)
+        && row.deviceName
+        && !Object.hasOwn(row, "controllable"),
+    ));
     assert.equal(history.total, total);
     assert.ok(history.data.every((row) =>
         Number.isSafeInteger(row.id)
         && typeof row.deviceName === "string"
         && ["ON", "OFF"].includes(row.action)
         && ["SUCCESS", "FAILED", "PENDING"].includes(row.status)
-        && row.device === `DEVICE_${row.deviceId}`
+        && Number.isSafeInteger(row.deviceId)
+        && !Object.hasOwn(row, "device")
         && (row.username === null || typeof row.username === "string")
-        && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(row.time)
+        && /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}$/.test(row.createdAtText)
         && Number.isFinite(Date.parse(row.createdAt)),
     ));
 
     if (history.data.length) {
         const first = history.data[0];
-        const byTime = await get(`/api/history?${new URLSearchParams({ key: first.time })}`);
+        const byTime = await get(`/api/history?${new URLSearchParams({ key: first.createdAtText })}`);
         assert.ok(byTime.data.some((row) => row.id === first.id));
 
-        const byDevice = await get(`/api/history?${new URLSearchParams({ device: first.device, key: first.deviceName })}`);
+        const byDevice = await get(`/api/history?${new URLSearchParams({ deviceId: String(first.deviceId), key: first.deviceName })}`);
         assert.ok(byDevice.data.some((row) => row.id === first.id));
-        assert.ok(byDevice.data.every((row) => row.device === first.device));
+        assert.ok(byDevice.data.every((row) => row.deviceId === first.deviceId));
+
+        const byDeviceOnly = await get(`/api/history?${new URLSearchParams({ deviceId: String(first.deviceId) })}`);
+        assert.ok(byDeviceOnly.data.every((row) => row.deviceId === first.deviceId));
+        const [[{ deviceTotal }]] = await db.execute(
+            `SELECT COUNT(*) AS deviceTotal FROM action_history ah
+             JOIN devices d ON d.device_id = ah.device_id
+             WHERE ah.device_id = ?`,
+            [first.deviceId],
+        );
+        assert.equal(byDeviceOnly.total, deviceTotal);
 
         const actionLabel = first.action === "ON" ? "Bật" : "Tắt";
         const byAction = await get(`/api/history?${new URLSearchParams({ action: first.action, key: actionLabel })}`);
@@ -140,6 +157,13 @@ test("history and device APIs map existing MySQL rows without changing device st
     }
     const noControl = await fetch(`${baseUrl}/api/devices/1`, { method: "PATCH" });
     assert.equal(noControl.status, 404);
+});
+
+test("history rejects invalid deviceId filters", async () => {
+    for (const deviceId of ["0", "abc", "1.5", "9007199254740992", ""]) {
+        const response = await fetch(`${baseUrl}/api/history?${new URLSearchParams({ deviceId })}`);
+        assert.equal(response.status, 400);
+    }
 });
 
 test("hardware status is available without a connected board", { skip: !hasDatabaseConfig }, async () => {

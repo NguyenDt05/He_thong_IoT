@@ -21,7 +21,7 @@
       "key": "controlDeviceId",
       "value": "1",
       "type": "string",
-      "description": "ID thiết bị có controllable=true dùng cho kiểm thử POST thủ công."
+      "description": "ID thiết bị dùng cho kiểm thử POST thủ công."
     },
     {
       "key": "controlAction",
@@ -62,15 +62,9 @@
                   "disabled": true
                 },
                 {
-                  "key": "type",
-                  "value": "TEMPERATURE",
-                  "description": "TEMPERATURE, HUMIDITY hoặc LIGHT.",
-                  "disabled": true
-                },
-                {
-                  "key": "field",
+                  "key": "criterion",
                   "value": "all",
-                  "description": "all, type, datetime hoặc value.",
+                  "description": "all, temperature, humidity, light hoặc datetime.",
                   "disabled": true
                 }
               ]
@@ -104,7 +98,7 @@
                   "    pm.expect(row.unit).to.be.a('string');",
                   "    pm.expect(row.value).to.be.a('number');",
                   "    pm.expect(row.createdAt === null || !Number.isNaN(Date.parse(row.createdAt))).to.eql(true);",
-                  "    pm.expect(row.createdAtText === null || /^\\d{2}\\/\\d{2}\\/\\d{4} \\d{2}:\\d{2}:\\d{2}$/.test(row.createdAtText)).to.eql(true);",
+                  "    pm.expect(row.createdAtText === null || /^\\d{4}\\/\\d{2}\\/\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(row.createdAtText)).to.eql(true);",
                   "  });",
                   "});"
                 ]
@@ -119,14 +113,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/data-sensor?page=1&limit=20&type=TEMPERATURE&field=value&key=25",
+              "raw": "{{baseUrl}}/api/data-sensor?page=1&limit=20&criterion=temperature&key=25",
               "host": ["{{baseUrl}}"],
               "path": ["api", "data-sensor"],
               "query": [
                 { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" },
-                { "key": "type", "value": "TEMPERATURE" },
-                { "key": "field", "value": "value" },
+                { "key": "criterion", "value": "temperature" },
                 { "key": "key", "value": "25" }
               ]
             },
@@ -222,12 +215,12 @@
                   "pm.test('Response is an array of valid devices', () => {",
                   "  pm.expect(body).to.be.an('array');",
                   "  body.forEach((row) => {",
-                  "    pm.expect(row).to.include.all.keys('deviceId', 'deviceName', 'status', 'pendingActionId', 'controllable', 'updatedAt');",
+                  "    pm.expect(row).to.include.all.keys('deviceId', 'deviceName', 'status', 'pendingActionId', 'updatedAt');",
+                  "    pm.expect(row).not.to.have.property('controllable');",
                   "    pm.expect(row.deviceId).to.be.a('number');",
                   "    pm.expect(row.deviceName).to.be.a('string');",
                   "    pm.expect(row.status).to.be.a('string');",
                   "    pm.expect(row.pendingActionId === null || Number.isInteger(row.pendingActionId)).to.eql(true);",
-                  "    pm.expect(row.controllable).to.be.a('boolean');",
                   "    pm.expect(row.updatedAt === null || !Number.isNaN(Date.parse(row.updatedAt))).to.eql(true);",
                   "  });",
                   "});"
@@ -256,7 +249,7 @@
                 { "key": "page", "value": "1", "description": "Mặc định 1, tối đa 100000." },
                 { "key": "limit", "value": "10", "description": "Mặc định 10, tối đa 100." },
                 { "key": "key", "value": "LED", "description": "Tìm tên thiết bị/người dùng/action/status/thời gian.", "disabled": true },
-                { "key": "device", "value": "DEVICE_1", "description": "Định dạng DEVICE_<id>.", "disabled": true },
+                { "key": "deviceId", "value": "1", "description": "ID thiết bị dạng số nguyên dương.", "disabled": true },
                 { "key": "action", "value": "ON", "description": "ON hoặc OFF.", "disabled": true },
                 { "key": "status", "value": "SUCCESS", "description": "SUCCESS, FAILED hoặc PENDING.", "disabled": true }
               ]
@@ -281,16 +274,16 @@
                   "});",
                   "pm.test('Every history row has required fields and types', () => {",
                   "  body.data.forEach((row) => {",
-                  "    pm.expect(row).to.include.all.keys('id', 'deviceId', 'deviceName', 'device', 'username', 'action', 'status', 'createdAt', 'time');",
+                  "    pm.expect(row).to.include.all.keys('id', 'deviceId', 'deviceName', 'username', 'action', 'status', 'createdAt', 'createdAtText');",
                   "    pm.expect(row.id).to.be.a('number');",
                   "    pm.expect(row.deviceId).to.be.a('number');",
                   "    pm.expect(row.deviceName).to.be.a('string');",
-                  "    pm.expect(row.device).to.eql(`DEVICE_${row.deviceId}`);",
+                  "    pm.expect(row).not.to.have.property('device');",
                   "    pm.expect(row.username === null || typeof row.username === 'string').to.eql(true);",
                   "    pm.expect(row.action).to.be.oneOf(['ON', 'OFF']);",
                   "    pm.expect(row.status).to.be.oneOf(['SUCCESS', 'FAILED', 'PENDING']);",
                   "    pm.expect(Number.isNaN(Date.parse(row.createdAt))).to.eql(false);",
-                  "    pm.expect(row.time).to.match(/^\\d{2}\\/\\d{2}\\/\\d{4} \\d{2}:\\d{2}:\\d{2}$/);",
+                  "    pm.expect(row.createdAtText).to.match(/^\\d{4}\\/\\d{2}\\/\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                   "  });",
                   "});"
                 ]
@@ -355,7 +348,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "history"]
             },
-            "description": "CÓ GHI CSDL VÀ CÓ THỂ ĐIỀU KHIỂN THIẾT BỊ. Chỉ chạy khi hardware connected, device tồn tại/controllable, không có pendingActionId và runWriteTests=true."
+            "description": "CÓ GHI CSDL VÀ CÓ THỂ ĐIỀU KHIỂN THIẾT BỊ. Chỉ chạy khi hardware connected, device tồn tại và được cấu hình trên mạch, không có pendingActionId và runWriteTests=true."
           },
           "event": [
             {
@@ -379,10 +372,10 @@
                   "pm.test('Response is JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
                   "const row = pm.response.json();",
                   "pm.test('Created command has required pending-history fields', () => {",
-                  "  pm.expect(row).to.include.all.keys('id', 'deviceId', 'deviceName', 'device', 'username', 'action', 'status', 'createdAt', 'time');",
+                  "  pm.expect(row).to.include.all.keys('id', 'deviceId', 'deviceName', 'username', 'action', 'status', 'createdAt', 'createdAtText');",
                   "  pm.expect(row.id).to.be.a('number');",
                   "  pm.expect(row.deviceId).to.eql(Number(pm.collectionVariables.get('controlDeviceId')));",
-                  "  pm.expect(row.device).to.eql(`DEVICE_${row.deviceId}`);",
+                  "  pm.expect(row).not.to.have.property('device');",
                   "  pm.expect(row.action).to.eql(pm.collectionVariables.get('controlAction'));",
                   "  pm.expect(row.status).to.eql('PENDING');",
                   "  pm.expect(row.username).to.eql(null);",

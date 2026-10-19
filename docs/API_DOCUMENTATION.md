@@ -72,16 +72,22 @@ Lấy dữ liệu đo mới nhất trước, JOIN bảng `data_sensor` với `se
 | `page` | string biểu diễn integer | Không | mặc định `1`, tối đa `100000` | Trang cần lấy. |
 | `limit` | string biểu diễn integer | Không | mặc định `10`, tối đa `100` | Số dòng mỗi trang. |
 | `key` | string | Không | được `trim()` | Từ khóa tìm kiếm. Chuỗi rỗng không tạo điều kiện tìm kiếm. |
-| `type` | string | Không | FE dùng `TEMPERATURE`, `HUMIDITY`, `LIGHT` | Lọc chính xác theo `sensors.sensor_type`. Backend không validate enum; giá trị khác thường cho mảng rỗng. |
-| `field` | string | Không | `all`, `type`, `datetime`, `value`; mặc định `all` | Chọn nhóm cột để tìm `key`. Giá trị khác tự trở về `all`. |
+| `criterion` | string | Không | `all`, `temperature`, `humidity`, `light`, `datetime`; mặc định `all` | Tiêu chí tìm kiếm tương ứng trực tiếp với lựa chọn trên giao diện. Không phân biệt chữ hoa/thường; giá trị khác tự trở về `all`. |
 
 Quy tắc tìm kiếm:
 
-- `all`: tìm ID dữ liệu, tên cảm biến, loại/mô tả loại, ngày giờ, giá trị và chuỗi `giá trị + đơn vị`.
-- `type`: tìm mã loại hoặc nhãn tiếng Việt của loại.
-- `datetime`: tìm trên chuỗi `dd/mm/yyyy HH:mm:ss`.
-- `value`: tìm trên giá trị số dạng chuỗi.
+- `all`: tìm `key` trong ID dữ liệu, tên cảm biến, loại/mô tả loại, ngày giờ, giá trị và chuỗi `giá trị + đơn vị`.
+- `temperature`: chỉ lấy dữ liệu `TEMPERATURE`; nếu có `key` thì tìm trong giá trị đo.
+- `humidity`: chỉ lấy dữ liệu `HUMIDITY`; nếu có `key` thì tìm trong giá trị đo.
+- `light`: chỉ lấy dữ liệu `LIGHT`; nếu có `key` thì tìm trong giá trị đo.
+- `datetime`: tìm `key` trên chuỗi ngày giờ `yyyy/MM/dd HH:mm:ss`.
 - Ký tự `%`, `_`, `!` trong `key` được escape và được hiểu là ký tự thường, không phải wildcard SQL.
+
+Ví dụ tìm giá trị chứa `25` trong dữ liệu nhiệt độ:
+
+```http
+GET /api/data-sensor?page=1&limit=20&criterion=temperature&key=25
+```
 
 #### Success response — `200 OK`
 
@@ -98,7 +104,7 @@ Response thực tế đã được xác nhận bằng test và gọi local:
       "unit": "%",
       "value": 76.68,
       "createdAt": "2026-10-15T17:29:05.000Z",
-      "createdAtText": "16/10/2026 00:29:05"
+      "createdAtText": "2026/10/16 00:29:05"
     }
   ],
   "page": 1,
@@ -118,7 +124,7 @@ Giá trị và tổng số dòng phụ thuộc CSDL tại thời điểm gọi. 
 }
 ```
 
-Không có status `400` riêng cho query sai; backend chuẩn hóa phân trang và bỏ về `field=all` như mô tả trên.
+Không có status `400` riêng cho query sai; backend chuẩn hóa phân trang và đưa `criterion` không hợp lệ về `all` như mô tả trên.
 
 #### CSDL liên quan
 
@@ -135,7 +141,7 @@ Thứ tự: `created_at DESC`, sau đó `data_id DESC`.
 
 ### GET `/api/devices`
 
-Đọc toàn bộ thiết bị, trạng thái vật lý gần nhất, khả năng điều khiển theo `MQTT_DEVICE_IDS` và lệnh `PENDING` còn hiệu lực.
+Đọc toàn bộ thiết bị, trạng thái vật lý gần nhất và lệnh `PENDING` còn hiệu lực.
 
 #### Query/body
 
@@ -152,7 +158,6 @@ Response là một mảng, không bọc trong đối tượng phân trang:
     "deviceName": "LED 1",
     "status": "OFF",
     "pendingActionId": null,
-    "controllable": true,
     "updatedAt": "2026-10-15T17:28:54.000Z"
   }
 ]
@@ -164,7 +169,6 @@ Response là một mảng, không bọc trong đối tượng phân trang:
 | `deviceName` | string | Tên trong CSDL. |
 | `status` | string | Frontend hiểu `ON` là bật; giá trị khác hiển thị tắt. Schema DB dự kiến `ON`/`OFF`, nhưng repository không validate lại. |
 | `pendingActionId` | integer hoặc `null` | Action mới nhất còn `PENDING` và chưa quá timeout. |
-| `controllable` | boolean | `true` khi ID nằm trong `MQTT_DEVICE_IDS`; mặc định là `1,2,3`. |
 | `updatedAt` | ISO string hoặc `null` | Được tạo từ `devices.updated_at`. |
 
 #### Error response — `500 Internal Server Error`
@@ -181,7 +185,6 @@ Response là một mảng, không bọc trong đối tượng phân trang:
 | --- | --- |
 | `devices` | SELECT `device_id`, `device_name`, `status`, `updated_at`. |
 | `action_history` | Subquery lấy `action_id` của lệnh `PENDING` chưa hết hạn. |
-| `MQTT_DEVICE_IDS` | Xác định `controllable`. |
 | `HARDWARE_COMMAND_TIMEOUT_MS` | Cửa sổ thời gian lệnh còn hiệu lực, mặc định 30000 ms. |
 
 ---
@@ -199,7 +202,7 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
 | `page` | integer string | Không | `1...` | Trang cần lấy. |
 | `limit` | integer string | Không | `10`, `20`, `50` | Số dòng/trang; backend cho tối đa `100`. |
 | `key` | string | Không | nội dung tự do | Tìm tên thiết bị, tên người dùng, thời gian, action/status; hỗ trợ từ tiếng Việt “bật”, “tắt” sau khi bỏ dấu. |
-| `device` | string | Không | `DEVICE_<id>` | So sánh chính xác với chuỗi dựng từ `device_id`. |
+| `deviceId` | integer string | Không | ID thiết bị, ví dụ `3` | Lọc chính xác theo `action_history.device_id`; giá trị phải là số nguyên dương an toàn. |
 | `action` | string | Không | `ON`, `OFF` | So sánh chính xác với `action_history.action`. Backend không validate query enum. |
 | `status` | string | Không | `SUCCESS`, `FAILED`, `PENDING` | So sánh với trạng thái hiệu dụng. Backend không validate query enum. |
 
@@ -217,9 +220,8 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
       "action": "OFF",
       "status": "SUCCESS",
       "deviceId": 3,
-      "device": "DEVICE_3",
       "createdAt": "2026-10-15T17:28:57.000Z",
-      "time": "16/10/2026 00:28:57"
+      "createdAtText": "2026/10/16 00:28:57"
     }
   ],
   "page": 1,
@@ -230,6 +232,8 @@ Lấy lịch sử thao tác thiết bị, JOIN tên thiết bị và tên ngư�
 ```
 
 `username` là `users.full_name` hoặc `null` khi `user_id` không có/không khớp. Action do Dashboard tạo hiện luôn ghi `user_id = NULL`.
+
+`deviceId` không hợp lệ trả `400 Bad Request` với `{"error":"deviceId không hợp lệ"}`.
 
 #### Error response — `500 Internal Server Error`
 
@@ -281,9 +285,8 @@ Cấu trúc là một dòng lịch sử, dùng trường `id` (không phải `ac
   "action": "ON",
   "status": "PENDING",
   "deviceId": 1,
-  "device": "DEVICE_1",
   "createdAt": "2026-10-17T02:20:00.000Z",
-  "time": "17/10/2026 09:20:00"
+  "createdAtText": "2026/10/17 09:20:00"
 }
 ```
 
@@ -436,7 +439,7 @@ Request POST thành công có thể điều khiển thiết bị thật. Collect
 ### Kiểm thử lệnh điều khiển
 
 1. Bảo đảm `GET /api/hardware/status` trả `connected: true`.
-2. Dùng `GET /api/devices` chọn một dòng có `controllable: true` và không có `pendingActionId`.
+2. Dùng `GET /api/devices` chọn một thiết bị không có `pendingActionId`.
 3. Đặt collection variable `controlDeviceId` bằng ID đó và `controlAction` là `ON` hoặc `OFF`.
 4. Đặt `runWriteTests=true` rồi chỉ chạy request **Create command - success (manual, writes DB)**.
 5. Kỳ vọng `201`, response `status: "PENDING"`; sau đó gọi lại Devices/History để quan sát xác nhận từ mạch.

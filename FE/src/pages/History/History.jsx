@@ -12,7 +12,7 @@ import "./History.css";
 import "../../styles/Toolbar.css";
 
 const DEFAULT_PAGE_SIZE = 20;
-const DEFAULT_FILTERS = { key: "", device: "", action: "", status: "" };
+const DEFAULT_FILTERS = { key: "", deviceId: "", action: "", status: "" };
 
 // Trang lịch sử gồm thanh tìm kiếm, các bộ lọc, bảng và phân trang.
 function History() {
@@ -100,7 +100,7 @@ function History() {
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Tên thiết bị, người dùng, hành động, trạng thái hoặc thời gian"
+              placeholder="Tên thiết bị, người dùng, hành động, trạng thái hoặc thời gian yyyy/MM/dd HH:mm:ss"
             />
           </div>
           {/* Ba hộp lọc thiết bị, hành động, trạng thái và các nút thao tác. */}
@@ -109,11 +109,11 @@ function History() {
               <DropdownSelect
                 variant="filter"
                 ariaLabel="Thiết bị"
-                value={appliedFilters.device}
-                onChange={(value) => handleFilterChange("device", value)}
+                value={appliedFilters.deviceId}
+                onChange={(value) => handleFilterChange("deviceId", value)}
                 options={[
                   { value: "", label: "Tất cả thiết bị" },
-                  ...devices.map((item) => ({ value: `DEVICE_${item.deviceId}`, label: item.deviceName })),
+                  ...devices.map((item) => ({ value: String(item.deviceId), label: item.deviceName })),
                 ]}
               />
             </Filter>

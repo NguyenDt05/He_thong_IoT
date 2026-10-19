@@ -63,7 +63,6 @@ Backend trả:
     "deviceId": 1,
     "deviceName": "LED 1",
     "status": "ON",
-    "controllable": true,
     "pendingActionId": null
   }
 ]
@@ -307,7 +306,7 @@ hardwareRT -> hardwareCtrl -> hardwareSV -> hardwareRP
 | `routes/deviceRT.js` | Khai báo `GET /api/devices`. |
 | `controller/deviceCtrl.js` | Trả danh sách thiết bị hoặc lỗi 500. |
 | `service/deviceSV.js` | Chuyển yêu cầu xuống repository. |
-| `repos/deviceRP.js` | Đọc trạng thái LED, lệnh đang chờ và cờ `controllable`. |
+| `repos/deviceRP.js` | Đọc trạng thái LED và lệnh đang chờ. |
 
 ### Nhóm lịch sử và tạo lệnh điều khiển
 

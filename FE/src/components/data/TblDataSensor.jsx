@@ -31,7 +31,7 @@ function TblDataSensor({ data, emptyMessage }) {
             <td className="col-value">{item.value}
                 {item.unit ? ` ${item.unit}` : ""}
             </td>
-            <td className="col-time">{item.createdAtText?.replace(/,\s*/, " ") || dinhdang(item.createdAt)}</td>
+            <td className="col-time">{item.createdAtText || dinhdang(item.createdAt)}</td>
           </tr>
         ))}
       </tbody>

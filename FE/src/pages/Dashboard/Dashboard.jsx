@@ -321,7 +321,12 @@ function Dashboard() {
         return;
       }
       dangTai = true;
-      const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(1, SO_DIEM_HIEN_THI, { type: cb.type }, controller.signal));
+      const yeuCau = DS_CAM_BIEN.map((cb) => layDuLieuCB_sv(
+        1,
+        SO_DIEM_HIEN_THI,
+        { criterion: cb.type.toLowerCase() },
+        controller.signal,
+      ));
       const ketQua = await Promise.allSettled(yeuCau);
       dangTai = false;
       if (!dangMoTrang) {
@@ -397,7 +402,7 @@ function Dashboard() {
       dangTai = true;
       try {
         const ketQua = await layThietBi_sv(controller.signal);
-        const dsDen = ketQua.filter((tb) => Number.isSafeInteger(Number(tb.deviceId)) && tb.controllable !== false);
+        const dsDen = ketQua.filter((tb) => Number.isSafeInteger(Number(tb.deviceId)));
         setDsThietBi(dsDen);
         setLoiThietBi(false);
       } catch (error) {
@@ -438,7 +443,7 @@ function Dashboard() {
       setDsThietBi((hienTai) => hienTai?.map((item) =>
         item.deviceId === id ? { ...item, pendingActionId: ketQuaLenh.value.id } : item));
       try {
-        setDsThietBi((await layThietBi_sv()).filter((tb) => tb.controllable !== false));
+        setDsThietBi(await layThietBi_sv());
       } catch {
         // Lệnh đã được xếp; lần đồng bộ thiết bị tiếp theo sẽ cập nhật trạng thái.
       }

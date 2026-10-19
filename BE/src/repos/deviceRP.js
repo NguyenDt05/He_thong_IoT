@@ -1,6 +1,5 @@
 const db = require("../db");
 const { formatDateTime } = require("./rowFormat");
-const { isControllableDeviceId } = require("../service/mqttBridge");
 
 // Đọc thiết bị từ MySQL và định dạng thời điểm cập nhật cho API.
 async function listDevices() {
@@ -17,7 +16,6 @@ async function listDevices() {
     );
     return rows.map(({ updatedAtLocal, ...row }) => ({
         ...row,
-        controllable: isControllableDeviceId(row.deviceId),
         updatedAt: formatDateTime(updatedAtLocal).iso,
     }));
 }

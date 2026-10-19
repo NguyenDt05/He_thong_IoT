@@ -27,8 +27,8 @@ Sau mọi thay đổi trạng thái LED, kể cả lệnh nhận trực tiếp t
 ## API giao diện
 
 - `GET /api/hardware/status` trả `connected`, lần đo cuối của từng loại cảm biến và ngưỡng quá hạn. `connected` chỉ đúng khi cầu nối MQTT vừa nhận và lưu số đo cùng cả ba loại có bản ghi mới. Đây là trạng thái dựa trên dữ liệu, không phải cảm biến phát hiện cắm/rút vật lý.
-- `GET /api/data-sensor?page=1&limit=10&key=&field=all` trả số đo từ `data_sensor` nối với `sensors`, mới nhất trước. `type` lọc theo loại; `field` nhận `all`, `type`, `datetime`, `value`.
-- `GET /api/devices` đọc thiết bị từ MySQL, gồm `status` thật, `controllable` và `pendingActionId` nếu có lệnh đang chờ còn hiệu lực.
+- `GET /api/data-sensor?page=1&limit=10&criterion=all&key=` trả số đo từ `data_sensor` nối với `sensors`, mới nhất trước. `criterion` nhận `all`, `temperature`, `humidity`, `light`, `datetime`; với một loại cảm biến, `key` được tìm trong giá trị đo.
+- `GET /api/devices` đọc thiết bị từ MySQL, gồm `status` thật và `pendingActionId` nếu có lệnh đang chờ còn hiệu lực.
 - `POST /api/history` với `{ "deviceId": 1, "action": "ON" }` hoặc `OFF` xếp lệnh `PENDING`, trả `201`. Nếu thiết bị đã có lệnh đang chờ, trả `409`; nếu firmware chưa hỗ trợ `deviceId`, trả `422`; khi mạch không gửi số đo mới, trả `503`.
 - `GET /api/history` đọc lịch sử và tên người dùng từ bảng `users` nếu bản ghi có `user_id`. Bản ghi không có người dùng trả `username: null`, không tạo tên minh họa.
 

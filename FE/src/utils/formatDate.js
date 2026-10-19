@@ -2,7 +2,7 @@
 export const LOCALE = "vi-VN";
 export const TIME_ZONE = "Asia/Ho_Chi_Minh";
 
-// Chuyển giá trị thời gian API thành ngày/tháng/năm và giờ:phút:giây theo Việt Nam.
+// Chuyển thời gian API thành yyyy/MM/dd HH:mm:ss theo múi giờ Việt Nam.
 export function dinhdang(date) {
   const parts = new Intl.DateTimeFormat(LOCALE, {
     timeZone: TIME_ZONE,
@@ -15,5 +15,5 @@ export function dinhdang(date) {
     hour12: false,
   }).formatToParts(new Date(date));
   const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return `${values.day}/${values.month}/${values.year} ${values.hour}:${values.minute}:${values.second}`;
+  return `${values.year}/${values.month}/${values.day} ${values.hour}:${values.minute}:${values.second}`;
 }

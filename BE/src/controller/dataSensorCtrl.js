@@ -3,15 +3,16 @@ const service = require('../service/dataSensorSV');
 // Đọc tham số truy vấn, gọi service lấy danh sách rồi trả JSON hoặc mã lỗi HTTP.
 async function layDuLieuCB_ctrl(req,res){
     try {
-        // Chỉ chấp nhận chuỗi cho từ khóa/loại/tiêu chí; thiếu page, limit thì dùng mặc định.
+        // Một tiêu chí mô tả đúng lựa chọn trên giao diện; thiếu hoặc sai thì tìm trên tất cả các trường.
         const key = typeof req.query.key === 'string' ? req.query.key.trim() : null;
-        const type = typeof req.query.type === 'string' ? req.query.type : null;
-        const field = ['all', 'type', 'datetime', 'value'].includes(req.query.field)
-            ? req.query.field : 'all';
+        const requestedCriterion = typeof req.query.criterion === 'string'
+            ? req.query.criterion.trim().toLowerCase() : 'all';
+        const criterion = ['all', 'temperature', 'humidity', 'light', 'datetime'].includes(requestedCriterion)
+            ? requestedCriterion : 'all';
         const page = req.query.page;
         const limit = req.query.limit;
 
-        const result = await service.layDuLieuCB_sv(key, type, field, page, limit);
+        const result = await service.layDuLieuCB_sv(key, criterion, page, limit);
         res.json(result);
     } catch (error) {
         console.error(error);

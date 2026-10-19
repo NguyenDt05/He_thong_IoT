@@ -13,25 +13,20 @@ import "../../styles/Toolbar.css";
 // Thiết lập số dòng mỗi trang và thời gian chờ phản hồi API.
 const DEFAULT_PAGE_SIZE = 20;
 const REQUEST_TIMEOUT_MS = 12_000;
-const DEFAULT_FILTERS = { key: "", field: "all" };
-const SENSOR_TYPES = {
-  temperature: "TEMPERATURE",
-  humidity: "HUMIDITY",
-  light: "LIGHT",
-};
+const DEFAULT_FILTERS = { key: "", criterion: "all" };
 const SEARCH_PLACEHOLDERS = {
-  all: "Tìm theo bất kỳ cột nào",
+  all: "Tìm kiếm...",
   temperature: "Nhập giá trị cảm biến nhiệt độ",
   humidity: "Nhập giá trị cảm biến độ ẩm",
   light: "Nhập giá trị cảm biến ánh sáng",
-  datetime: "Nhập ngày giờ (dd/mm/yyyy hh:mm:ss)",
+  datetime: "Nhập ngày giờ (yyyy/MM/dd HH:mm:ss)",
 };
 
 // Trang cảm biến quản lý tiêu chí đang nhập, tiêu chí đã áp dụng và dữ liệu nhận từ API.
 function DataSensor() {
   // Giá trị trong form chỉ được áp dụng cho bảng sau khi gửi tìm kiếm.
   const [search, setSearch] = useState("");
-  const [searchField, setSearchField] = useState("all");
+  const [searchCriterion, setSearchCriterion] = useState("all");
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
 
   // Trạng thái danh sách, phân trang và phản hồi tải dữ liệu.
@@ -129,16 +124,13 @@ function DataSensor() {
   function handleSearch(event) {
     event.preventDefault();
     setPage(1);
-    const type = SENSOR_TYPES[searchField];
-    setAppliedFilters(type
-      ? { key: search.trim(), field: "value", type }
-      : { key: search.trim(), field: searchField });
+    setAppliedFilters({ key: search.trim(), criterion: searchCriterion });
   }
 
   // Đặt lại cả form và bộ lọc đang áp dụng để tải lại danh sách từ trang đầu.
   function handleClear() {
     setSearch("");
-    setSearchField("all");
+    setSearchCriterion("all");
     setPage(1);
     setAppliedFilters(DEFAULT_FILTERS);
   }
@@ -146,8 +138,7 @@ function DataSensor() {
   const showingPreviousRequest = page !== shownPage
     || pageSize !== shownPageSize
     || appliedFilters.key !== shownFilters.key
-    || appliedFilters.field !== shownFilters.field
-    || appliedFilters.type !== shownFilters.type;
+    || appliedFilters.criterion !== shownFilters.criterion;
 
   // Bố cục trang gồm form tìm kiếm, bảng kết quả và chân bảng phân trang.
   return (
@@ -162,8 +153,8 @@ function DataSensor() {
             <DropdownSelect
               variant="filter"
               ariaLabel="Tiêu chí lọc dữ liệu cảm biến"
-              value={searchField}
-              onChange={setSearchField}
+              value={searchCriterion}
+              onChange={setSearchCriterion}
               options={[
                 { value: "all", label: "Tất cả" },
                 { value: "temperature", label: "Cảm biến nhiệt độ" },
@@ -177,7 +168,7 @@ function DataSensor() {
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder={SEARCH_PLACEHOLDERS[searchField]}
+              placeholder={SEARCH_PLACEHOLDERS[searchCriterion]}
             />
           </div>
           <SearchActions onClear={handleClear} clearLabel="Đặt lại" />

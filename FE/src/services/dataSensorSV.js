@@ -42,8 +42,7 @@ function savePage(key, result) {
 function sensorQuery(page, limit, filters) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (filters.key) params.set("key", filters.key);
-  if (filters.key && filters.field && filters.field !== "all") params.set("field", filters.field);
-  if (filters.type) params.set("type", filters.type);
+  if (filters.criterion && filters.criterion !== "all") params.set("criterion", filters.criterion);
   return params.toString();
 }
 

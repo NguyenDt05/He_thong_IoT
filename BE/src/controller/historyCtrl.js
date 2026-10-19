@@ -6,12 +6,20 @@ async function listHistory(req, res) {
     try {
         const query = req.query;
         const key = typeof query.key === "string" ? query.key.trim() : null;
-        const device = typeof query.device === "string" ? query.device : null;
+        const requestedDeviceId = query.deviceId;
+        let deviceId = null;
+        if (requestedDeviceId !== undefined) {
+            if (typeof requestedDeviceId !== "string" || !/^[1-9]\d*$/.test(requestedDeviceId)
+                || !Number.isSafeInteger(Number(requestedDeviceId))) {
+                return res.status(400).json({ error: "deviceId không hợp lệ" });
+            }
+            deviceId = Number(requestedDeviceId);
+        }
         const action = typeof query.action === "string" ? query.action : null;
         const status = typeof query.status === "string" ? query.status : null;
 
         res.json(await historyService.listHistory(
-            key, device, action, status, query.page, query.limit,
+            key, deviceId, action, status, query.page, query.limit,
         ));
     } catch (error) {
         console.error(error);
