@@ -4,6 +4,8 @@ import DataSensor from "./pages/DataSensor/DataSensor";
 import History from "./pages/History/History";
 import Profile from "./pages/Profile/Profile";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import AuthProvider from "./AuthProvider";
+import AuthPage from "./pages/Auth/AuthPage";
 
 // Bảng ánh xạ URL
 const pages = {
@@ -12,6 +14,8 @@ const pages = {
   "/data-sensor": DataSensor,
   "/history": History,
   "/profile": Profile,
+  "/login": () => <AuthPage mode="login" />,
+  "/register": () => <AuthPage mode="register" />,
 };
 
 // Đọc đường dẫn hiện tại từ Router và chọn thành phần trang cần hiển thị.
@@ -26,7 +30,9 @@ function AppPages() {
 function App() {
   return (
     <Router>
-      <AppPages />
+      <AuthProvider>
+        <AppPages />
+      </AuthProvider>
     </Router>
   );
 }

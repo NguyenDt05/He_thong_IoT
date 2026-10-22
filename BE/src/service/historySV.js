@@ -12,8 +12,8 @@ async function listHistory(key, deviceId, action, status, requestedPage, request
 }
 
 // Chuyển yêu cầu ghi thao tác xuống repository.
-async function recordHistory(deviceId, action) {
-    return historyRP.recordHistory(deviceId, action);
+async function recordHistory(deviceId, action, userId = null) {
+    return historyRP.recordHistory(deviceId, action, userId);
 }
 
 module.exports = { listHistory, recordHistory };

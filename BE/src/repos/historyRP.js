@@ -161,7 +161,7 @@ async function countHistory(key, deviceId, action, status) {
 }
 
 // Ghi lệnh PENDING, không cho gửi lệnh mới khi lệnh cũ chưa hết hạn.
-async function recordHistory(deviceId, action) {
+async function recordHistory(deviceId, action, userId = null) {
     const connection = await db.getConnection();
 
     try {
@@ -197,8 +197,8 @@ async function recordHistory(deviceId, action) {
 
         const [result] = await connection.execute(
             `INSERT INTO action_history (user_id, device_id, action, status)
-             VALUES (NULL, ?, ?, 'PENDING')`,
-            [deviceId, action]
+             VALUES (?, ?, ?, 'PENDING')`,
+            [userId, deviceId, action]
         );
 
         const [[row]] = await connection.execute(

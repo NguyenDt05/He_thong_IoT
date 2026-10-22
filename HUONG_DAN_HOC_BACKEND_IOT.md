@@ -521,6 +521,7 @@ erDiagram
     SENSORS ||--o{ DATA_SENSOR : has
     DEVICES ||--o{ ACTION_HISTORY : has
     USERS ||--o{ ACTION_HISTORY : creates
+    USERS ||--o{ AUTH_SESSIONS : has
 
     SENSORS {
         int sensor_id PK
@@ -552,7 +553,22 @@ erDiagram
     USERS {
         int user_id PK
         varchar full_name
+        varchar username UK
+        varchar password_hash
+        varchar avatar_file
         varchar email
+        varchar student_id
+        varchar phone
+        text github_url
+        text figma_url
+        text report_url
+        text postman_url
+    }
+    AUTH_SESSIONS {
+        bigint session_id PK
+        int user_id FK
+        char token_hash UK
+        datetime expires_at
     }
 ```
 
@@ -913,7 +929,7 @@ Nguyên tắc debug:
 - [ ] Thêm MQTT Last Will cho trạng thái ESP32.
 - [ ] Dùng topic trạng thái riêng như `device/3/status`.
 - [ ] Dùng WebSocket hoặc SSE để backend đẩy trạng thái tới FE.
-- [ ] Thêm authentication và gắn `user_id` vào lịch sử.
+- [x] Thêm đăng nhập bằng cookie phiên và gắn `user_id` vào lịch sử khi có tài khoản; khách vẫn điều khiển được.
 - [ ] Thêm migration/schema SQL vào repository để dựng DB từ đầu.
 
 ---

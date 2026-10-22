@@ -16,7 +16,7 @@
     background-color: #ffffff;
     border: 1px solid #dce8f2;
     border-radius: 14px;
-    overflow: hidden;
+    overflow: auto;
 }
 
 /* Cột nhận diện căn giữa ảnh đại diện và tên người dùng. */
@@ -39,7 +39,27 @@
     border: 4px solid #ffffff;
     border-radius: 50%;
     object-fit: cover;
+    font-size: 54px;
 }
+
+.avatar-upload {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 14px;
+    border: 1px solid #b5d2e2;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #315d78;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.avatar-upload:focus-within { outline: 2px solid #4294bb; outline-offset: 2px; }
+.avatar-file-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.avatar-file-input:disabled { cursor: wait; }
+.avatar-upload-error { margin: 0; color: #b3232d; font-size: 13px; }
 
 /* Màu chữ tiêu đề thống nhất giữa phần avatar, thông tin và liên kết. */
 .avatar h2,
@@ -128,7 +148,27 @@
 
 .profile-link span {
     font-size: 14px;
+    overflow-wrap: anywhere;
 }
+
+.profile-message { margin: 30px 0; padding: 28px; background: white; border: 1px solid #dce8f2; border-radius: 12px; color: #315d78; }
+.profile-message a { color: #245c7c; font-weight: 700; }
+.profile-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.profile-section-heading h2 { margin: 0; font-size: 20px; }
+.profile-section-heading button, .profile-edit-actions button { padding: 9px 14px; border: 1px solid #b5d2e2; border-radius: 8px; background: #f4fbff; color: #315d78; font-weight: 600; cursor: pointer; }
+.profile-section-heading button:hover, .profile-edit-actions button:hover { background: #e4f4fc; }
+.profile-link-empty { color: #80939e; }
+.profile-link-empty:hover { background: #f8fcfe; }
+.profile-edit-form { display: grid; gap: 16px; }
+.profile-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.profile-edit-field { display: grid; gap: 6px; color: #667b89; font-size: 14px; }
+.profile-edit-field input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #c9dce8; border-radius: 8px; color: #213f52; }
+.profile-edit-field input:focus { outline: 2px solid #9bd0e9; }
+.profile-edit-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.profile-edit-actions button[type="submit"] { border-color: #315d78; background: #315d78; color: white; }
+.profile-edit-actions button[type="submit"]:hover { background: #24475e; }
+.profile-edit-actions button:disabled { opacity: .6; cursor: wait; }
+.profile-error { margin: 0; color: #b3232d; font-size: 14px; }
 
 /* Màn hình vừa: thu ảnh đại diện và khoảng đệm hai cột. */
 @media (max-width: 900px) {
@@ -144,6 +184,7 @@
     .avatar-img {
         width: 140px;
         height: 140px;
+        font-size: 42px;
     }
 }
 
@@ -168,6 +209,7 @@
     .avatar-img {
         width: 120px;
         height: 120px;
+        font-size: 36px;
     }
 
     .profile-details {
@@ -184,4 +226,6 @@
     .profile-link-list {
         grid-template-columns: 1fr;
     }
+
+    .profile-edit-grid { grid-template-columns: 1fr; }
 }

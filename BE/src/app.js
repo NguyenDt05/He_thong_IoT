@@ -7,6 +7,7 @@ const dataSensorRoute = require("./routes/dataSensorRT");
 const deviceRoute = require("./routes/deviceRT");
 const historyRoute = require("./routes/historyRT");
 const hardwareRoute = require("./routes/hardwareRT");
+const authRoute = require("./routes/authRT");
 const { startMqttBridge } = require("./service/mqttBridge");
 
 // Khởi tạo API: nhận JSON, cho phép CORS và gắn ba nhóm đường dẫn.
@@ -18,6 +19,7 @@ app.use("/api/data-sensor", dataSensorRoute);
 app.use("/api/devices", deviceRoute);
 app.use("/api/history", historyRoute);
 app.use("/api/hardware", hardwareRoute);
+app.use("/api/auth", authRoute);
 
 // Chỉ mở cổng khi chạy trực tiếp; test có thể dùng app mà không mở cổng cố định.
 if (require.main === module) {

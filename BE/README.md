@@ -12,6 +12,8 @@ npm start
 
 Backend tự kết nối lại broker khi mất mạng. Cần chạy **một** tiến trình backend làm cầu nối MQTT để tránh xử lý trùng bản tin. Backend dùng `sensors`, `data_sensor`, `devices`, `action_history`, `users` trong MySQL hiện có; không tự tạo bản ghi mẫu.
 
+Chạy `npm run db:migrate:auth` một lần trước khi dùng tài khoản. Lệnh thêm các cột nullable vào `users` (`username`, `password_hash`, `avatar_file`, mã sinh viên, số điện thoại và bốn URL) cùng bảng `auth_sessions`; có thể chạy lại mà không xóa người dùng cũ. Tài khoản cũ chưa có `username` sẽ không đăng nhập được cho đến khi được bổ sung tên đăng nhập.
+
 | Topic từ firmware | Dữ liệu | Xử lý backend |
 | --- | --- | --- |
 | `sensor/data` | `{ "temperature": 27.4, "humidity": 68, "light": 35 }` | Ánh xạ ba loại tới `sensor_id` trong bảng `sensors` và ghi đồng thời vào `data_sensor` với thời gian nhận thực. |
@@ -31,6 +33,11 @@ Sau mọi thay đổi trạng thái LED, kể cả lệnh nhận trực tiếp t
 - `GET /api/devices` đọc thiết bị từ MySQL, gồm `status` thật và `pendingActionId` nếu có lệnh đang chờ còn hiệu lực.
 - `POST /api/history` với `{ "deviceId": 1, "action": "ON" }` hoặc `OFF` xếp lệnh `PENDING`, trả `201`. Nếu thiết bị đã có lệnh đang chờ, trả `409`; nếu firmware chưa hỗ trợ `deviceId`, trả `422`; khi mạch không gửi số đo mới, trả `503`.
 - `GET /api/history` đọc lịch sử và tên người dùng từ bảng `users` nếu bản ghi có `user_id`. Bản ghi không có người dùng trả `username: null`, không tạo tên minh họa.
+- `POST /api/auth/register` tạo tài khoản với `fullName`, `username`, `password` và các trường hồ sơ tùy chọn; đồng thời đăng nhập. Mật khẩu được băm khi lưu nhưng không kiểm tra độ dài.
+- `POST /api/auth/login` nhận `username`, `password` nhưng hiện chỉ xét `username`; `POST /api/auth/logout` xóa phiên hiện tại.
+- `GET /api/auth/me` trả hồ sơ hoặc `null` nếu là khách; `PUT /api/auth/me` cập nhật họ tên, email, mã sinh viên, số điện thoại và các URL. Phiên dùng cookie HttpOnly, lưu trong `auth_sessions` 30 ngày; không dùng JWT.
+- `PUT /api/auth/avatar` nhận trực tiếp nội dung ảnh JPG, PNG hoặc WebP tối đa 2 MB với `Content-Type` tương ứng; `GET /api/auth/avatar` trả ảnh của tài khoản đang đăng nhập. File nằm trong `BE/uploads/avatars` (được Git bỏ qua), DB chỉ lưu tên file trong `users.avatar_file`. Khi chuyển máy hoặc sao lưu DB, cần sao lưu thư mục ảnh cùng DB.
+- Khách vẫn gọi các API xem dữ liệu và `POST /api/history` như trước. Lệnh từ tài khoản đang đăng nhập ghi `action_history.user_id` theo phiên hợp lệ; khách ghi `NULL`.
 
 Các API danh sách trả `{ data, page, limit, total, totalPages }`; `limit` mặc định là `20` và tối đa là `100`. Thời gian lưu và hiển thị theo giờ Việt Nam. DB hiện không có trường nguồn để phân biệt bản ghi cảm biến thử nghiệm với bản ghi đo thật đã tồn tại; cần xác nhận nguồn trước khi xóa hay lọc chúng.
 

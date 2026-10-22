@@ -53,7 +53,6 @@
 }
 
 .sidebar-user {
-    margin-top: auto;
     padding: 18px 16px;
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr);
@@ -61,7 +60,6 @@
     gap: 12px;
     font-weight: 500;
     font-size: 16px;
-    border-top: 1px solid #c5d9ff;
     color: inherit; /* Màu chữ kế thừa từ theme. */
     text-decoration: none; /* Không gạch chân. */
     cursor: pointer; /* Con trỏ chuột khi rê vào. */
@@ -72,11 +70,69 @@
     height: 44px;
     border-radius: 50%;
     object-fit: cover;
+    font-size: 14px;
 }
 
 .sidebar-user-name {
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
+.sidebar-account {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #c5d9ff;
+}
+
+.sidebar-account .sidebar-user { flex: 1; min-width: 0; }
+
+.sidebar-login {
+    margin-top: auto;
+    display: block;
+    padding: 25px 20px;
+    border-top: 1px solid #c5d9ff;
+    color: #213f52;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.sidebar-logout {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #315d78;
+    cursor: pointer;
+}
+
+.sidebar-logout:hover, .sidebar-logout:focus-visible { background: #d6e5ff; }
+.sidebar-logout-tooltip {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: #213f52;
+    color: white;
+    font-size: 12px;
+    white-space: nowrap;
+    box-shadow: 0 7px 18px rgba(33, 63, 82, .25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s;
+}
+.sidebar-logout:hover .sidebar-logout-tooltip,
+.sidebar-logout:focus-visible .sidebar-logout-tooltip { opacity: 1; }
+.sidebar-logout-error { margin: 0 12px 10px; color: #b3232d; font-size: 12px; }
 
 
 /* Màn hình vừa: thu chiều rộng sidebar và chữ thương hiệu. */

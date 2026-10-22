@@ -42,7 +42,7 @@ async function recordHistory(req, res) {
     }
 
     try {
-        const row = await historyService.recordHistory(deviceId, action);
+        const row = await historyService.recordHistory(deviceId, action, req.auth?.userId ?? null);
         if (!row) return res.status(404).json({ error: "Không tìm thấy thiết bị" });
         return res.status(201).json(row);
     } catch (error) {

@@ -23,6 +23,7 @@ Các lời gọi HTTP nằm trong `src/services/`. `apiConfig.js` chọn gốc A
 | Dashboard: công tắc đèn | Chỉ cho gửi lệnh khi mạch đang kết nối. `POST /api/history` tạo lệnh `PENDING`; nút chờ mạch xác nhận và chỉ đổi trạng thái khi `devices.status` trong DB đổi. |
 | Dữ liệu cảm biến | Gọi `GET /api/data-sensor` với một `criterion` tương ứng lựa chọn `all`, `temperature`, `humidity`, `light` hoặc `datetime` khi mở trang hay đổi phân trang/tìm kiếm. Trang API đã tải được lưu trong `localStorage` theo truy vấn; bản đã lưu có thể hiện ngay hoặc khi API lỗi. |
 | Lịch sử hoạt động | Gọi `GET /api/history` khi mở trang hoặc đổi phân trang/bộ lọc; tên người dùng đến từ bảng `users` nếu có. Bản ghi không có `user_id` hiển thị dấu gạch ngang. |
-| Profile | Thông tin cá nhân và liên kết ghi cố định trong `Profile.jsx`; không gọi API. |
+| Đăng ký/đăng nhập | Cả hai form có ô mật khẩu; đăng ký lưu mật khẩu dạng băm, đăng nhập hiện chỉ kiểm tra username qua API `/api/auth`, giữ phiên bằng cookie HttpOnly. Khách vẫn xem và điều khiển thiết bị. |
+| Profile | Gọi `GET /api/auth/me`; người đã đăng nhập có thể sửa thông tin cá nhân và bốn URL liên kết bằng `PUT /api/auth/me`, tải ảnh riêng bằng `PUT /api/auth/avatar`. Người chưa tải ảnh thấy chữ cái đầu tên thay ảnh mặc định chung. |
 
 Cấu hình cầu nối MQTT cho firmware ESP32 và cách bật LED 3 nằm trong [hướng dẫn backend](../BE/README.md). Backend dùng các topic và khóa JSON của mã Arduino hiện tại.

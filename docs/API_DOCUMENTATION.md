@@ -1,18 +1,18 @@
 # Tài liệu API hệ thống IoT
 
-> Phạm vi rà soát: toàn bộ `BE/src`, `BE/test`, các lời gọi HTTP trong `FE/src`, `BE/README.md`, `FE/README.md` và `HUONG_DAN_HOC_BACKEND_IOT.md` tại ngày 17/10/2026. Tài liệu này không mô tả API giả định.
+> Phạm vi rà soát: toàn bộ `BE/src`, `BE/test`, các lời gọi HTTP trong `FE/src`, `BE/README.md`, `FE/README.md` và `HUONG_DAN_HOC_BACKEND_IOT.md`; cập nhật tài khoản ngày 22/10/2026.
 
 ## 1. Tổng quan
 
 - Base URL khi chạy local: `http://localhost:3001`.
 - Định dạng request body: `application/json`.
 - Định dạng response thành công và các lỗi do controller bắt: JSON.
-- Không có authentication/authorization trong mã nguồn hiện tại.
+- Tài khoản dùng cookie phiên HttpOnly lưu trong `auth_sessions`; khách vẫn xem và điều khiển thiết bị.
 - `cors()` đang dùng cấu hình mặc định, không giới hạn origin trong mã nguồn.
 - Thời gian từ MySQL được hiểu là giờ Việt Nam (`+07:00`) và chuyển thành ISO UTC ở các trường `createdAt`, `updatedAt`, `lastSeen`.
 - Endpoint không tồn tại dùng handler 404 mặc định của Express, vì vậy response là HTML, không phải JSON.
 
-Backend hiện có **5 operation HTTP trên 4 endpoint**:
+Backend hiện có **12 operation HTTP trên 9 endpoint**:
 
 | Nhóm | Method | Endpoint | Frontend sử dụng |
 | --- | --- | --- | --- |
@@ -21,6 +21,13 @@ Backend hiện có **5 operation HTTP trên 4 endpoint**:
 | ActionHistory | GET | `/api/history` | History |
 | ActionHistory | POST | `/api/history` | Công tắc thiết bị trên Dashboard |
 | Hardware | GET | `/api/hardware/status` | Dashboard |
+| Auth | POST | `/api/auth/register` | Đăng ký |
+| Auth | POST | `/api/auth/login` | Đăng nhập |
+| Auth | GET | `/api/auth/me` | Trang cá nhân, trạng thái đăng nhập |
+| Auth | PUT | `/api/auth/me` | Chỉnh sửa trang cá nhân |
+| Auth | POST | `/api/auth/logout` | Đăng xuất |
+| Auth | PUT | `/api/auth/avatar` | Tải ảnh đại diện |
+| Auth | GET | `/api/auth/avatar` | Hiển thị ảnh đại diện |
 
 Luồng lớp thông thường là Route → Controller → Service → Repository → MySQL. Riêng `GET /api/hardware/status` được xử lý trực tiếp trong route và gọi repository/MQTT service, không có controller và service riêng.
 
@@ -231,7 +238,7 @@ Lệnh `PENDING` quá `HARDWARE_COMMAND_TIMEOUT_MS` được cập nhật thành
 }
 ```
 
-`username` là `users.full_name` hoặc `null` khi `user_id` không có/không khớp. Action do Dashboard tạo hiện luôn ghi `user_id = NULL`.
+`username` là `users.full_name` hoặc `null` khi `user_id` không có/không khớp. Action của khách ghi `user_id = NULL`; action của tài khoản đăng nhập dùng `user_id` từ cookie phiên hợp lệ.
 
 `deviceId` không hợp lệ trả `400 Bad Request` với `{"error":"deviceId không hợp lệ"}`.
 
@@ -312,7 +319,7 @@ Thứ tự kiểm tra có ý nghĩa:
 | Nguồn | Thao tác |
 | --- | --- |
 | `devices` | SELECT có `FOR UPDATE` để xác nhận thiết bị tồn tại. |
-| `action_history` | Kiểm tra lệnh chờ và INSERT `{user_id: NULL, device_id, action, status: PENDING}` trong transaction. |
+| `action_history` | Kiểm tra lệnh chờ và INSERT `{user_id: ID từ phiên hoặc NULL, device_id, action, status: PENDING}` trong transaction. |
 | Topic MQTT `device/control` | Bridge publish `{actionId, deviceId, command}`; đây không phải HTTP endpoint. |
 | Topic MQTT `device/status` | ESP32 phản hồi để cập nhật `devices.status` và trạng thái lịch sử. |
 
@@ -368,7 +375,27 @@ Không có query parameter và không có request body.
 
 ---
 
-## 7. Kiểm tra các endpoint được nêu trong báo cáo
+## 7. Tài khoản và hồ sơ
+
+Chạy `npm run db:migrate:auth` trong `BE` để thêm cột tài khoản/hồ sơ vào `users` và bảng `auth_sessions`. Các cột mới nullable nên không sửa dữ liệu của người dùng cũ. Mật khẩu đăng ký được băm vào `password_hash`; đăng nhập hiện chưa đối chiếu cột này. Tài khoản cũ chưa có `username` chưa thể đăng nhập.
+
+| Method | Endpoint | Request | Kết quả |
+| --- | --- | --- | --- |
+| POST | `/api/auth/register` | `fullName`, `username`, `password`; tùy chọn `email`, `studentId`, `phone`, `githubUrl`, `figmaUrl`, `reportUrl`, `postmanUrl` | `201`, thông tin người dùng và cookie phiên. `username` trùng trả `409`; không kiểm tra độ dài mật khẩu. |
+| POST | `/api/auth/login` | `username`, `password` | `200`, thông tin người dùng và cookie phiên; chỉ xét username, username không tồn tại trả `401`. |
+| GET | `/api/auth/me` | Cookie phiên nếu có | `200`, thông tin người dùng hoặc `null` nếu là khách. |
+| PUT | `/api/auth/me` | Cookie phiên; `fullName` và các trường hồ sơ tùy chọn | `200`, hồ sơ đã cập nhật; khách trả `401`. Không sửa username. |
+| POST | `/api/auth/logout` | Cookie phiên nếu có | `204`, xóa phiên trên DB và cookie ở trình duyệt. |
+| PUT | `/api/auth/avatar` | Cookie phiên, body ảnh JPG/PNG/WebP tối đa 2 MB; `Content-Type` là MIME ảnh | `200`, hồ sơ có `avatarFile` mới; khách trả `401`, sai loại ảnh trả `400`, ảnh quá lớn trả `413`. |
+| GET | `/api/auth/avatar` | Cookie phiên | `200`, ảnh của tài khoản hiện tại; chưa có ảnh trả `404`, khách trả `401`. |
+
+Mật khẩu đăng ký được băm bằng `scrypt` nhưng mật khẩu nhập lúc đăng nhập hiện bị bỏ qua; ai biết username của một tài khoản đều có thể đăng nhập vào tài khoản đó. Cookie phiên là token ngẫu nhiên HttpOnly, SameSite=Lax; DB chỉ lưu hash token. Phiên hết hạn sau 30 ngày. Các URL hồ sơ chỉ nhận `http` hoặc `https`.
+
+Ảnh đại diện lưu riêng trong `BE/uploads/avatars`, còn `users.avatar_file` lưu tên file. Sidebar và Profile dùng ảnh của tài khoản đăng nhập; khi chưa tải ảnh, giao diện hiển thị chữ cái đầu tên. Thư mục ảnh không nằm trong Git nên cần sao lưu cùng DB khi chuyển máy.
+
+---
+
+## 8. Kiểm tra các endpoint được nêu trong báo cáo
 
 Kết quả dựa trên route được mount trong `BE/src/app.js`, toàn bộ file route và lần gọi local ngày 17/10/2026:
 
@@ -377,20 +404,20 @@ Kết quả dựa trên route được mount trong `BE/src/app.js`, toàn bộ f
 | `/api/dashboard` | Không | `404`, HTML Express | Dashboard là trang React. Nó tổng hợp `/api/data-sensor`, `/api/devices`, `/api/history` và `/api/hardware/status`. |
 | `/api/devices/control` | Không | `404`, HTML Express | Điều khiển được tạo bằng `POST /api/history`; `device/control` chỉ là tên topic MQTT. |
 | `/api/action-history` | Không | `404`, HTML Express | Endpoint hiện tại là `/api/history` cho cả GET và POST. Tên bảng DB mới là `action_history`. |
-| `/api/profile` | Không | `404`, HTML Express | Profile được viết tĩnh trong `FE/src/pages/Profile/Profile.jsx`, không gọi backend. |
+| `/api/profile` | Không | `404`, HTML Express | Profile gọi `GET/PUT /api/auth/me`; không có endpoint `/api/profile`. |
 
 Không nên thêm bốn endpoint này vào báo cáo như API đang hoạt động. Postman Collection có nhóm “Endpoint audit” để xác nhận 404.
 
-## 8. Đối chiếu với `HUONG_DAN_HOC_BACKEND_IOT.md`
+## 9. Đối chiếu với `HUONG_DAN_HOC_BACKEND_IOT.md`
 
 ### Nội dung khớp mã nguồn
 
-- Danh sách 5 operation HTTP và nơi Frontend sử dụng là đúng.
+- Năm operation dữ liệu/thiết bị ban đầu vẫn đúng; hệ thống đã thêm năm operation tài khoản.
 - Luồng Route → Controller → Service → Repository đúng với ba nhóm chính; ngoại lệ Hardware đã được chính tài liệu học ghi rõ.
 - Luồng `POST /api/history` → `PENDING` → MQTT `device/control` → MQTT `device/status` đúng.
-- Các bảng `sensors`, `data_sensor`, `devices`, `action_history`, `users` khớp các câu SQL trong repository.
+- Các bảng `sensors`, `data_sensor`, `devices`, `action_history`, `users`, `auth_sessions` khớp các câu SQL trong repository.
 - Quy tắc online/offline dựa trên MQTT và dữ liệu cảm biến, mặc định 6 giây, khớp code.
-- Frontend Profile không dùng API (được xác nhận thêm trong `FE/README.md` và `Profile.jsx`).
+- Frontend Profile dùng `GET/PUT /api/auth/me` để đọc và sửa hồ sơ.
 
 ### Khác biệt hoặc điểm cần làm rõ
 
@@ -399,10 +426,10 @@ Không nên thêm bốn endpoint này vào báo cáo như API đang hoạt độ
 | Ví dụ `GET /api/devices` ở mục HTTP không có `updatedAt`. | Repository luôn thêm `updatedAt` (ISO hoặc `null`). | Ví dụ trong tài liệu học thiếu một trường response. |
 | Sequence điều khiển ghi “API trả actionId”. | `POST /api/history` trả một history row với khóa `id`; MQTT payload sau đó mới đổi khóa này thành `actionId`. | Cần phân biệt tên trường HTTP `id` và MQTT `actionId`. |
 | Mô tả `FAILED` có thể khiến người đọc hiểu rằng DB luôn được cập nhật khi lệnh hết hạn. | `GET /api/history` dùng biểu thức `CASE` để hiển thị lệnh `PENDING` quá hạn thành `FAILED`, nhưng không UPDATE DB. DB chỉ được UPDATE thành `FAILED` khi có `device/status` mang `actionId` cho lệnh đã hết hạn. | Response API và giá trị đang lưu trong DB có thể khác nhau đối với lệnh quá hạn chưa có phản hồi. |
-| ERD liệt kê đầy đủ cột/schema. | Repository không chứa migration hoặc `CREATE TABLE`; chỉ các cột được truy vấn mới xác minh được từ mã nguồn. | Các ràng buộc/cột không dùng trong SQL cần đối chiếu schema MySQL riêng nếu đưa vào báo cáo chính thức. |
+| ERD liệt kê đầy đủ cột/schema. | `BE/scripts/migrate-auth.js` tạo phần schema tài khoản; schema cảm biến/thiết bị vẫn cần đối chiếu MySQL. | Các ràng buộc/cột không dùng trong SQL cần đối chiếu schema MySQL riêng nếu đưa vào báo cáo chính thức. |
 | Tài liệu không liệt kê bốn đường dẫn `/api/dashboard`, `/api/devices/control`, `/api/action-history`, `/api/profile` như API. | Tất cả đều 404. | Không có mâu thuẫn; cần ghi rõ để tránh nhầm trang FE, topic MQTT hoặc tên bảng thành REST endpoint. |
 
-## 9. Postman Collection và kiểm thử
+## 10. Postman Collection và kiểm thử
 
 Các file:
 
@@ -446,11 +473,11 @@ Request POST thành công có thể điều khiển thiết bị thật. Collect
 
 Các nhánh `404`, `409`, `503` của POST cần trạng thái runtime cụ thể như bảng ở mục 5; không nên giả lập bằng cách sửa code hoặc tự coi một response khác là đúng. Với `409`, gửi lệnh thứ hai cho cùng thiết bị trong lúc lệnh đầu vẫn còn `PENDING`. Với `503`, chạy khi backend/MQTT sensor stream không live. Với `404`, cần một ID nằm trong `MQTT_DEVICE_IDS` nhưng không có trong bảng `devices` và mạch phải live.
 
-## 10. Kết quả xác minh
+## 11. Kết quả xác minh
 
-- `npm test` tại `BE`: 7 test pass, 0 fail, 1 test ghi rồi rollback được skip vì `DB_WRITE_ROLLBACK_TEST` không bật.
+- `npm test` tại `BE` sau khi thêm tài khoản: 13 test pass, 0 fail, 1 test ghi rồi rollback được skip vì `DB_WRITE_ROLLBACK_TEST` không bật.
 - GET DataSensor, Device, ActionHistory và Hardware đều trả `200` với CSDL local tại thời điểm kiểm tra.
 - POST ActionHistory body sai trả đúng `400` và JSON đã mô tả.
 - Bốn endpoint nghi vấn đều trả `404` HTML.
 
-Không có logic hệ thống hoặc route nào được thay đổi khi tạo tài liệu này.
+Các route `/api/auth/*` và việc gắn `user_id` cho lệnh điều khiển được bổ sung ngày 22/10/2026; luồng MQTT và điều khiển thiết bị giữ nguyên.

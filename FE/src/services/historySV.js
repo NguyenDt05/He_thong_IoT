@@ -18,6 +18,7 @@ export async function layLichSu_sv(page, limit, filters = {}, signal) {
 export async function ghiLichSu_sv(deviceId, action) {
   const response = await fetch(API_URL, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deviceId, action }),
   });
