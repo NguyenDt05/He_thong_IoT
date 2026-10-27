@@ -44,5 +44,3 @@ Với lệnh terminal điều khiển một LED, backend ghi một dòng `SUCCES
 - Khách vẫn gọi các API xem dữ liệu và `POST /api/history` như trước. Lệnh từ tài khoản đang đăng nhập ghi `action_history.user_id` theo phiên hợp lệ; khách ghi `NULL`.
 
 Các API danh sách trả `{ data, page, limit, total, totalPages }`; `limit` mặc định là `20` và tối đa là `100`. Thời gian lưu và hiển thị theo giờ Việt Nam. DB hiện không có trường nguồn để phân biệt bản ghi cảm biến thử nghiệm với bản ghi đo thật đã tồn tại; cần xác nhận nguồn trước khi xóa hay lọc chúng.
-
-Chạy `npm test` để kiểm tra API đọc, dữ liệu MQTT và xử lý trạng thái. Các test mặc định không ghi DB; phép thử ghi rồi rollback chỉ chạy khi đặt `DB_WRITE_ROLLBACK_TEST=1`.

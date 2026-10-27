@@ -77,7 +77,7 @@ function Profile() {
   }
 
   return (
-    <MainLayout title="Hồ sơ cá nhân" description="Thông tin cá nhân của người dùng">
+    <MainLayout title="Hồ sơ cá nhân" description="Thông tin cá nhân của người dùng" className="profile-layout">
       {loading ? (
         <div className="profile-message">Đang tải thông tin tài khoản...</div>
       ) : !user ? (
@@ -151,7 +151,7 @@ function Profile() {
                     <h2>Liên kết</h2>
                     <div className="profile-link-list">
                       {links.map(({ key, label }) => user[key] ? (
-                        <a className="profile-link" href={user[key]} target="_blank" rel="noopener noreferrer" key={key}>
+                        <a className="profile-link" href={user[key]} title={user[key]} target="_blank" rel="noopener noreferrer" key={key}>
                           <h3>{label}</h3>
                           <span>{user[key]}</span>
                         </a>
