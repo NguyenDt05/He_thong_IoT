@@ -9,7 +9,7 @@ const links = [
   { key: "githubUrl", label: "Github" },
   { key: "figmaUrl", label: "Figma" },
   { key: "reportUrl", label: "Báo cáo" },
-  { key: "postmanUrl", label: "Postman" },
+  { key: "postmanUrl", label: "API Docs" },
 ];
 
 function profileForm(user) {
@@ -117,7 +117,7 @@ function Profile() {
                       ["fullName", "Họ và tên", "text"], ["email", "Email", "email"],
                       ["studentId", "Mã sinh viên", "text"], ["phone", "Số điện thoại", "tel"],
                       ["githubUrl", "GitHub URL", "url"], ["figmaUrl", "Figma URL", "url"],
-                      ["reportUrl", "Báo cáo URL", "url"], ["postmanUrl", "Postman URL", "url"],
+                      ["reportUrl", "Báo cáo URL", "url"], ["postmanUrl", "API Docs URL", "url"],
                     ].map(([name, label, type]) => (
                       <label className="profile-edit-field" key={name}>
                         <span>{label}</span>
