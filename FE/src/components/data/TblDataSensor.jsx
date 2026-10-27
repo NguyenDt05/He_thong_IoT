@@ -1,4 +1,5 @@
 import { dinhdang } from "../../utils/formatDate";
+import { formatSensorValue } from "../../utils/formatSensorValue";
 import "./TblDataSensor.css";
 
 // Bảng cảm biến hiển thị các bản ghi API, gồm trạng thái rỗng và đơn vị đo của từng loại.
@@ -28,7 +29,7 @@ function TblDataSensor({ data, emptyMessage }) {
             <td className="col-id">{item.dataId}</td>
             <td className="col-name">{item.sensorName}</td>
             <td className="col-type">{item.sensorType}</td>
-            <td className="col-value">{item.value}
+            <td className="col-value">{formatSensorValue(item.value)}
                 {item.unit ? ` ${item.unit}` : ""}
             </td>
             <td className="col-time">{item.createdAtText || dinhdang(item.createdAt)}</td>

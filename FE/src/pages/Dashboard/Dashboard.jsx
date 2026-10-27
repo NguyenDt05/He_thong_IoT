@@ -7,6 +7,7 @@ import { layThietBi_sv } from "../../services/deviceSV";
 import { ghiLichSu_sv } from "../../services/historySV";
 import { layTrangThaiMach_sv } from "../../services/hardwareSV";
 import { dinhdang } from "../../utils/formatDate";
+import { formatSensorValue } from "../../utils/formatSensorValue";
 import Thermometer from "../../components/Thermometer";
 import HumidityIcon from "../../components/HumidityIcon";
 import LightIcon from "../../components/LightIcon";
@@ -224,9 +225,7 @@ const SensorChart = memo(function SensorChart({ rows }) {
           <Tooltip // Hiển thị thông tin khi rê chuột vào biểu đồ
             labelFormatter={(time) => dinhdang(time)}
             formatter={(value, name) => [
-              `${Number(value).toLocaleString("vi-VN", {
-                maximumFractionDigits: 2 // Giới hạn số chữ số thập phân hiển thị
-              })} ${name === "Nhiệt độ" ? "°C" : "%"}`,
+              `${formatSensorValue(value)} ${name === "Nhiệt độ" ? "°C" : "%"}`,
               name,
             ]}
           />
@@ -482,7 +481,7 @@ function Dashboard() {
                   <div className="sensor-card-info">
                     <span className="sensor-card-label">{cb.title}</span>
                     <div className="sensor-reading">
-                      <strong>{moiNhat ? Number(moiNhat.value).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : "--"}</strong>
+                      <strong>{formatSensorValue(moiNhat?.value)}</strong>
                       <span>{moiNhat?.unit || cb.unit}</span>
                     </div>
                   </div>

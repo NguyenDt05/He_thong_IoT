@@ -71,6 +71,40 @@ async function saveReadings(readings) {
     }
 }
 
+// Firmware cũ phản hồi deviceId=0 cho một lệnh bật/tắt đồng thời ba LED.
+// Đồng bộ trạng thái và ghi ba hành động đã xác nhận trong cùng một transaction.
+async function saveBroadcastDeviceStatus(deviceIds, physicalStatus) {
+    if (deviceIds.length === 0) return 0;
+    const connection = await db.getConnection();
+    const placeholders = deviceIds.map(() => "?").join(",");
+    try {
+        await connection.beginTransaction();
+        const [devices] = await connection.execute(
+            `SELECT device_id AS deviceId FROM devices WHERE device_id IN (${placeholders}) FOR UPDATE`,
+            deviceIds,
+        );
+        if (devices.length > 0) {
+            const ids = devices.map((device) => device.deviceId);
+            await connection.execute(
+                `UPDATE devices SET status = ? WHERE device_id IN (${ids.map(() => "?").join(",")})`,
+                [physicalStatus, ...ids],
+            );
+            await connection.execute(
+                `INSERT INTO action_history (user_id, device_id, action, status)
+                 VALUES ${ids.map(() => "(NULL, ?, ?, 'SUCCESS')").join(",")}`,
+                ids.flatMap((id) => [id, physicalStatus]),
+            );
+        }
+        await connection.commit();
+        return devices.length;
+    } catch (error) {
+        try { await connection.rollback(); } catch { /* Giao dịch đã hoàn tất. */ }
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
 async function pendingCommands() {
     const [rows] = await db.execute(
         `SELECT action_id AS id, device_id AS deviceId, action FROM action_history
@@ -84,12 +118,12 @@ async function pendingCommands() {
 
 // Luôn đồng bộ trạng thái chân vào devices. actionId chỉ dùng để đối chiếu
 // lịch sử khi trạng thái là phản hồi của một lệnh do Dashboard tạo.
-async function saveDeviceStatus(id, deviceId, physicalStatus) {
+async function saveDeviceStatus(id, deviceId, physicalStatus, recordExternalAction = false) {
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
         const [[device]] = await connection.execute(
-            "SELECT device_id FROM devices WHERE device_id = ? FOR UPDATE", [deviceId],
+            "SELECT device_id, status FROM devices WHERE device_id = ? FOR UPDATE", [deviceId],
         );
         if (!device) {
             await connection.rollback();
@@ -97,8 +131,8 @@ async function saveDeviceStatus(id, deviceId, physicalStatus) {
         }
 
         await connection.execute("UPDATE devices SET status = ? WHERE device_id = ?", [physicalStatus, deviceId]);
-
         let commandStatus = null;
+        let dashboardAction = false;
         if (id !== null) {
             const [[command]] = await connection.execute(
                 `SELECT action_id, device_id, action, status,
@@ -107,16 +141,28 @@ async function saveDeviceStatus(id, deviceId, physicalStatus) {
                 [COMMAND_TIMEOUT_SECONDS, id, deviceId],
             );
             if (command?.status === "PENDING" && !command.expired) {
+                dashboardAction = true;
                 commandStatus = command.action === physicalStatus ? "SUCCESS" : "FAILED";
                 await connection.execute(
                     "UPDATE action_history SET status = ? WHERE action_id = ?", [commandStatus, id],
                 );
             } else if (command?.status === "PENDING" && command.expired) {
+                dashboardAction = true;
                 commandStatus = "FAILED";
                 await connection.execute("UPDATE action_history SET status = 'FAILED' WHERE action_id = ?", [id]);
             } else if (command) {
                 commandStatus = command.status;
+                dashboardAction = !command.expired;
             }
+        }
+
+        // Ghi một lần khi trạng thái vật lý đổi ngoài Dashboard. Gói trạng thái
+        // định kỳ giữ nguyên giá trị sẽ không tạo thêm lịch sử.
+        if (recordExternalAction || (device.status !== physicalStatus && !dashboardAction)) {
+            await connection.execute(
+                "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, ?, 'SUCCESS')",
+                [deviceId, physicalStatus],
+            );
         }
         await connection.commit();
         return { id, deviceId, physicalStatus, status: commandStatus };
@@ -128,4 +174,5 @@ async function saveDeviceStatus(id, deviceId, physicalStatus) {
     }
 }
 
-module.exports = { SENSOR_TYPES, hardwareStatus, latestReadings, sensorIds, saveReadings, pendingCommands, saveDeviceStatus };
+module.exports = { SENSOR_TYPES, hardwareStatus, latestReadings, sensorIds, saveReadings, saveBroadcastDeviceStatus,
+    pendingCommands, saveDeviceStatus };

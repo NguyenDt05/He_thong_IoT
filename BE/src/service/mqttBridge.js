@@ -42,11 +42,16 @@ function parseDeviceStatus(payload) {
     const message = JSON.parse(payload.toString());
     const actionId = message?.actionId == null || message.actionId === 0 ? null : message.actionId;
     if (!message || (actionId !== null && (!Number.isSafeInteger(actionId) || actionId < 1))
-        || !Number.isSafeInteger(message.deviceId) || message.deviceId < 1
+        || !Number.isSafeInteger(message.deviceId) || message.deviceId < 0
+        || (message.groupCommand !== undefined && typeof message.groupCommand !== "boolean")
+        || (message.groupCommand === true && (message.deviceId === 0 || actionId !== null))
         || !["ON", "OFF"].includes(message.status)) {
         throw new Error("Gói device/status không hợp lệ");
     }
-    return { actionId, deviceId: message.deviceId, status: message.status };
+    // A group status does not confirm any single Dashboard action.
+    return { actionId: message.deviceId === 0 ? null : actionId,
+        deviceId: message.deviceId, status: message.status,
+        ...(message.groupCommand === true && { groupCommand: true }) };
 }
 
 function controlMessage(command) {
@@ -87,7 +92,12 @@ function startMqttBridge() {
         } else if (topic === STATUS_TOPIC) {
             try {
                 const message = parseDeviceStatus(payload);
-                hardware.saveDeviceStatus(message.actionId, message.deviceId, message.status)
+                const save = message.deviceId === 0
+                    ? hardware.saveBroadcastDeviceStatus(
+                        [1, 2, 3].filter((id) => DEVICE_IDS.has(id)), message.status)
+                    : hardware.saveDeviceStatus(message.actionId, message.deviceId, message.status,
+                        message.groupCommand === true);
+                save
                     .catch((error) => console.error("Không thể lưu device/status:", error.message));
             } catch (error) {
                 console.error("Bỏ qua device/status:", error.message);

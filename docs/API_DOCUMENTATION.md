@@ -323,6 +323,10 @@ Thứ tự kiểm tra có ý nghĩa:
 | Topic MQTT `device/control` | Bridge publish `{actionId, deviceId, command}`; đây không phải HTTP endpoint. |
 | Topic MQTT `device/status` | ESP32 phản hồi để cập nhật `devices.status` và trạng thái lịch sử. |
 
+Lệnh terminal `deviceId: 0` được xác nhận bằng một gói `device/status` nhóm từ firmware cũ hoặc ba gói có `groupCommand: true` từ firmware mới. Backend ghi một dòng `action_history` `SUCCESS` cho mỗi LED 1, 2 và 3, với `user_id = NULL`; các gói trạng thái định kỳ không ghi lịch sử khi trạng thái không đổi.
+
+Với lệnh terminal cho một LED, phản hồi `device/status` không khớp lệnh Dashboard đang hiệu lực sẽ tạo một dòng `SUCCESS` khi trạng thái trong `devices` đổi. Phản hồi lặp lại cùng trạng thái không tạo dòng mới.
+
 ---
 
 ## 6. Hardware

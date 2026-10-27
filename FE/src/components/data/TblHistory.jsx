@@ -10,7 +10,8 @@ function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." 
         <table className="history-table">
             <thead>
                 <tr>
-                    <th className = "col-id">ID</th>
+                    <th className = "col-id">ID lịch sử</th>
+                    <th className = "col-device-id">ID thiết bị</th>
                     <th className = "col-name">Tên thiết bị</th>
                     <th className ="col-username"> Người dùng</th>
                     <th className = "col-action" style={{textAlign: 'center'}}>Hành động</th>
@@ -22,13 +23,14 @@ function TblHistory({ data, emptyMessage = "Không có dữ liệu phù hợp." 
                 {/* Thông báo ngay trong vùng bảng khi không có sự kiện nào khớp. */}
                 {data.length === 0 && (
                     <tr className="empty-row">
-                        <td colSpan="6">{emptyMessage}</td>
+                        <td colSpan="7">{emptyMessage}</td>
                     </tr>
                 )}
                 {/* Ánh xạ mã hành động/trạng thái sang nhãn người dùng nhìn thấy. */}
                 {data.map((item) => (
                     <tr key={item.id}>
                         <td>{item.id}</td>
+                        <td>{item.deviceId}</td>
                         <td>{item.deviceName}</td>
                         <td>{item.username || "—"}</td>
                         <td style={{textAlign: 'center'}}>{item.action === "ON" ? "Bật" : "Tắt"}</td>

@@ -9,10 +9,10 @@
     background-color: #fff;
 }
 
-/* Màn hình hẹp: giữ đủ độ rộng cho sáu cột và cuộn ngang ở khung ngoài. */
+/* Màn hình hẹp: giữ đủ độ rộng cho bảy cột và cuộn ngang ở khung ngoài. */
 @media (max-width: 700px) {
     .history-table {
-        min-width: 900px;
+        min-width: 1000px;
     }
 
     .history-table th,
@@ -42,10 +42,10 @@
     overflow-y: auto;
 }
 
-/* Chia mỗi dòng thành sáu cột: ID, thiết bị, người dùng, hành động, trạng thái, thời gian. */
+/* Chia mỗi dòng thành bảy cột, tách ID lịch sử và ID thiết bị. */
 .history-table tr {
     display: grid;
-    grid-template-columns: 8% 22% 20% 10% 18% 22%;
+    grid-template-columns: 10% 10% 18% 15% 10% 15% 22%;
 }
 
 /* Căn lề, khoảng cách và đường phân cách chung cho các ô. */
@@ -98,7 +98,7 @@
     background-color: #eef5ff;
 }
 
-/* Dòng thông báo rỗng trải toàn bộ chiều rộng sáu cột. */
+/* Dòng thông báo rỗng trải toàn bộ chiều rộng bảy cột. */
 .history-table .empty-row {
     grid-template-columns: 1fr;
 }

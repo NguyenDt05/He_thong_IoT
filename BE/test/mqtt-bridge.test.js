@@ -21,9 +21,19 @@ test("MQTT device/status nhận cả xác nhận lệnh và trạng thái tự p
         { actionId: null, deviceId: 1, status: "OFF" });
     assert.deepEqual(parseDeviceStatus(Buffer.from('{"actionId":0,"deviceId":1,"status":"ON"}')),
         { actionId: null, deviceId: 1, status: "ON" });
+    for (const deviceId of [1, 2, 3]) {
+        assert.deepEqual(parseDeviceStatus(Buffer.from(JSON.stringify({ deviceId, status: "ON" }))),
+            { actionId: null, deviceId, status: "ON" });
+    }
+    assert.deepEqual(parseDeviceStatus(Buffer.from('{"actionId":35,"deviceId":0,"status":"ON"}')),
+        { actionId: null, deviceId: 0, status: "ON" });
+    assert.deepEqual(parseDeviceStatus(Buffer.from('{"deviceId":2,"status":"ON","groupCommand":true}')),
+        { actionId: null, deviceId: 2, status: "ON", groupCommand: true });
+    assert.throws(() => parseDeviceStatus(Buffer.from('{"deviceId":2,"status":"ON","groupCommand":"true"}')));
+    assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":2,"status":"ON","groupCommand":true}')));
     assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":1,"status":""}')));
     assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":"12","deviceId":1,"status":"ON"}')));
-    assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":0,"status":"ON"}')));
+    assert.throws(() => parseDeviceStatus(Buffer.from('{"actionId":12,"deviceId":-1,"status":"ON"}')));
     assert.equal(isControllableDeviceId(1), true);
     assert.equal(isControllableDeviceId(0), false);
     assert.deepEqual(JSON.parse(controlMessage({ id: 12, deviceId: 1, action: "ON" })),

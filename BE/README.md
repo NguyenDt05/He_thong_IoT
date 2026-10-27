@@ -24,6 +24,10 @@ Firmware gửi cảm biến mỗi 2 giây. `HARDWARE_STALE_MS` mặc định `60
 
 Sau mọi thay đổi trạng thái LED, kể cả lệnh nhận trực tiếp từ terminal, firmware phải phát `device/status`. Khi kết nối lại MQTT, firmware nên phát lại trạng thái của cả ba LED để backend đồng bộ trạng thái vật lý hiện tại trước khi Dashboard đọc API.
 
+Firmware mẫu có xử lý `deviceId: 0` (bật/tắt cả ba LED) nằm tại [firmware/esp32_iot](../firmware/esp32_iot). Firmware mới phát ba bản tin `device/status` riêng cho ID 1, 2 và 3 với `groupCommand: true`. Backend cũng nhận phản hồi `deviceId: 0` từ firmware cũ. Mỗi lần mạch xác nhận một lệnh nhóm, backend cập nhật ba dòng `devices` và ghi ba dòng `SUCCESS` cho ID 1, 2, 3 trong `action_history` (`user_id` là `NULL`). Các gói đồng bộ trạng thái định kỳ không tạo lịch sử khi trạng thái không đổi. Sau khi sửa backend, cần khởi động lại backend để áp dụng.
+
+Với lệnh terminal điều khiển một LED, backend ghi một dòng `SUCCESS` (`user_id = NULL`) khi `device/status` cho biết trạng thái LED đã thay đổi và không thuộc một lệnh Dashboard đang hiệu lực. Phản hồi lặp lại cùng trạng thái không tạo thêm lịch sử.
+
 `MQTT_DEVICE_IDS` mặc định `1,2,3`, tương ứng ba LED mà firmware xử lý. Dashboard chỉ hiển thị các thiết bị có ID nằm trong danh sách này. Sau khi thay đổi cấu hình, cần khởi động lại backend để nạp danh sách mới.
 
 ## API giao diện

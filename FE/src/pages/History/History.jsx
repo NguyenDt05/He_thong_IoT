@@ -12,6 +12,7 @@ import "./History.css";
 import "../../styles/Toolbar.css";
 
 const DEFAULT_PAGE_SIZE = 20;
+const HISTORY_REFRESH_MS = 3000;
 const DEFAULT_FILTERS = { key: "", deviceId: "", action: "", status: "" };
 
 // Trang lịch sử gồm thanh tìm kiếm, các bộ lọc, bảng và phân trang.
@@ -39,26 +40,39 @@ function History() {
 
   useEffect(() => {
     const controller = new AbortController();
-    async function loadHistory() {
-      setLoading(true);
-      setError("");
-      setRows([]);
-      setTotal(0);
-      try {
-        const result = await layLichSu_sv(page, pageSize, appliedFilters, controller.signal);
-        setRows(result.data);
-        setTotal(result.total);
-      } catch {
-        if (controller.signal.aborted) return;
+    let inFlight = false;
+    async function loadHistory(initial = false) {
+      if (inFlight) return;
+      inFlight = true;
+      if (initial) {
+        setLoading(true);
+        setError("");
         setRows([]);
         setTotal(0);
-        setError("Không thể tải lịch sử hoạt động. Vui lòng thử lại.");
+      }
+      try {
+        const result = await layLichSu_sv(page, pageSize, appliedFilters, controller.signal);
+        if (controller.signal.aborted) return;
+        setRows(result.data);
+        setTotal(result.total);
+        setError("");
+      } catch {
+        if (!controller.signal.aborted && initial) {
+          setRows([]);
+          setTotal(0);
+          setError("Không thể tải lịch sử hoạt động. Vui lòng thử lại.");
+        }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        inFlight = false;
+        if (!controller.signal.aborted && initial) setLoading(false);
       }
     }
-    loadHistory();
-    return () => controller.abort();
+    loadHistory(true);
+    const interval = window.setInterval(() => loadHistory(), HISTORY_REFRESH_MS);
+    return () => {
+      window.clearInterval(interval);
+      controller.abort();
+    };
   }, [page, pageSize, appliedFilters]);
 
   function handlePageSizeChange(size) {

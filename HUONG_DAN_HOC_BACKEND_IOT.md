@@ -478,7 +478,7 @@ Trong trường hợp này, `device/status` có thể không có `actionId`:
 }
 ```
 
-Backend vẫn cập nhật `devices.status`, nhưng không đánh dấu một dòng lịch sử của Dashboard vì không có lệnh nào cần đối chiếu.
+Backend vẫn cập nhật `devices.status`, nhưng không đánh dấu một lệnh Dashboard là thành công nếu không có `actionId` phù hợp. Với lệnh terminal điều khiển một LED, backend ghi một dòng `SUCCESS` khi trạng thái thực thay đổi; báo lại cùng trạng thái không ghi trùng. Với lệnh điều khiển cả ba LED (`deviceId: 0`), phản hồi nhóm từ firmware cũ tạo ba dòng `SUCCESS` riêng cho `device_id` 1, 2 và 3. Firmware mới phát ba phản hồi mang `groupCommand: true` để ghi lịch sử theo trạng thái từng chân. Các gói trạng thái định kỳ không tạo dòng lịch sử khi trạng thái không đổi.
 
 Nếu ESP32 chỉ đổi chân mà không publish `device/status`, Backend và Frontend không có cách biết trạng thái vật lý đã thay đổi.
 
