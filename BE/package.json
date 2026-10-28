@@ -5,6 +5,8 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
+    "test": "node --test",
+    "db:migrate:alerts": "node scripts/migrate-alerts.js",
     "db:migrate:auth": "node scripts/migrate-auth.js"
   },
   "keywords": [],

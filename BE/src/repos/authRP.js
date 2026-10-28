@@ -5,9 +5,9 @@ const userFields = `user_id AS userId, full_name AS fullName, username, email,
     student_id AS studentId, phone, github_url AS githubUrl,
     figma_url AS figmaUrl, report_url AS reportUrl, postman_url AS postmanUrl`;
 
-async function findByUsername(username) {
+async function findCredentialsByUsername(username) {
     const [[user]] = await db.execute(
-        `SELECT ${userFields} FROM users WHERE username = ?`,
+        `SELECT ${userFields}, password_hash AS passwordHash FROM users WHERE username = ?`,
         [username]
     );
     return user || null;
@@ -70,6 +70,6 @@ async function deleteSession(tokenHash) {
 }
 
 module.exports = {
-    findByUsername, findById, createUser, updateUser, setAvatarFile,
+    findCredentialsByUsername, findById, createUser, updateUser, setAvatarFile,
     createSession, findSession, deleteSession,
 };

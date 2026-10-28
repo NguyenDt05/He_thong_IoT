@@ -8,7 +8,7 @@ const initialForm = {
   fullName: "", username: "", password: "",
 };
 
-function Field({ label, name, type = "text", value, onChange, required = false, autoComplete }) {
+function Field({ label, name, type = "text", value, onChange, required = false, autoComplete, minLength, maxLength }) {
   return (
     <label className="auth-field">
       <span>{label}</span>
@@ -19,6 +19,8 @@ function Field({ label, name, type = "text", value, onChange, required = false, 
         onChange={onChange}
         required={required}
         autoComplete={autoComplete}
+        minLength={minLength}
+        maxLength={maxLength}
       />
     </label>
   );
@@ -73,7 +75,7 @@ export default function AuthPage({ mode }) {
               <Field label="Họ và tên" name="fullName" value={form.fullName} onChange={handleChange} required autoComplete="name" />
             )}
             <Field label="Tên đăng nhập" name="username" value={form.username} onChange={handleChange} required autoComplete="username" />
-            <Field label="Mật khẩu" name="password" type="password" value={form.password} onChange={handleChange} autoComplete={isRegister ? "new-password" : "current-password"} />
+            <Field label="Mật khẩu" name="password" type="password" value={form.password} onChange={handleChange} required minLength={isRegister ? 8 : undefined} maxLength={128} autoComplete={isRegister ? "new-password" : "current-password"} />
             {error && <p className="auth-error" role="alert">{error}</p>}
             <button className="auth-submit" disabled={submitting} type="submit">
               {submitting ? "Đang xử lý..." : isRegister ? "Tạo tài khoản" : "Đăng nhập"}

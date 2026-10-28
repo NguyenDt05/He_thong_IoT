@@ -1,10 +1,11 @@
-const { randomBytes, createHash, scrypt: scryptCallback } = require("node:crypto");
+const { randomBytes, createHash, timingSafeEqual, scrypt: scryptCallback } = require("node:crypto");
 const { promisify } = require("node:util");
 const authRP = require("../repos/authRP");
 
 const scrypt = promisify(scryptCallback);
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
-const COOKIE_NAME = "iot_session";
+// Đổi tên cookie để các phiên tạo trước khi kiểm tra mật khẩu không còn hiệu lực.
+const COOKIE_NAME = "iot_session_v2";
 
 function validationError(message) {
     const error = new Error(message);
@@ -71,19 +72,28 @@ async function register(body) {
         throw validationError("Tên đăng nhập cần 3–50 ký tự chữ, số, _, . hoặc -");
     }
     const profile = validateProfile(body);
-    const password = typeof body?.password === "string" ? body.password : "";
+    const password = body?.password;
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+        throw validationError("Mật khẩu cần từ 8 đến 128 ký tự");
+    }
     return authRP.createUser({ ...profile, username }, await hashPassword(password));
 }
 
 async function login(body) {
     const username = requiredText(body?.username, "Tên đăng nhập", 50);
-    const user = await authRP.findByUsername(username);
-    if (!user) {
-        const error = new Error("Tên đăng nhập không tồn tại");
+    const password = body?.password;
+    const user = await authRP.findCredentialsByUsername(username);
+    const match = /^([a-f0-9]{32}):([a-f0-9]{128})$/.exec(user?.passwordHash || "");
+    const savedHash = match ? Buffer.from(match[2], "hex") : null;
+    const candidate = savedHash && typeof password === "string" && password.length <= 128
+        ? await scrypt(password, match[1], savedHash.length) : null;
+    if (!candidate || !timingSafeEqual(candidate, savedHash)) {
+        const error = new Error("Tên đăng nhập hoặc mật khẩu không đúng");
         error.code = "BAD_CREDENTIALS";
         throw error;
     }
-    return user;
+    const { passwordHash, ...publicUser } = user;
+    return publicUser;
 }
 
 async function updateProfile(userId, body) {
@@ -91,12 +101,13 @@ async function updateProfile(userId, body) {
 }
 
 function tokenHash(token) {
-    return createHash("sha256").update(token).digest("hex");
+    return createHash("sha256").update(`v2:${token}`).digest("hex");
 }
 
 async function startSession(res, userId) {
     const token = randomBytes(32).toString("hex");
     await authRP.createSession(userId, tokenHash(token));
+    res.clearCookie("iot_session", { path: "/" });
     res.cookie(COOKIE_NAME, token, {
         httpOnly: true,
         sameSite: "lax",
@@ -107,6 +118,7 @@ async function startSession(res, userId) {
 }
 
 function clearSessionCookie(res) {
+    res.clearCookie("iot_session", { path: "/" });
     res.clearCookie(COOKIE_NAME, {
         httpOnly: true,
         sameSite: "lax",

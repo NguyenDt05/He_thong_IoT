@@ -32,8 +32,9 @@ async function login(req, res) {
 }
 
 async function me(req, res) {
+    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
     try {
-        return res.json(req.auth ? await authRP.findById(req.auth.userId) : null);
+        return res.json(await authRP.findById(req.auth.userId));
     } catch (error) {
         return handleError(error, res);
     }

@@ -118,6 +118,17 @@
     font-weight: 600;
 }
 
+.sensor-alert-count {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.sensor-alert-count.is-alert {
+    color: #dc2626;
+    font-weight: 700;
+}
+
 /* Thẻ đèn: biểu tượng, tên, trạng thái và công tắc nằm cùng một hàng. */
 .light-card {
     display: flex;
@@ -136,6 +147,24 @@
 .light-card .light-icon {
     filter: grayscale(1);
     opacity: 0.55;
+}
+
+.light-card.is-alert {
+    border-color: #ef4444;
+}
+
+.light-card.is-alert .light-icon {
+    filter: none;
+    animation: light-alert-blink 1s step-end infinite;
+}
+
+.light-card.is-alert .light-card-details .light-card-status {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+@keyframes light-alert-blink {
+    50% { opacity: 0.15; }
 }
 
 .light-card-details {
@@ -180,6 +209,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .light-card-status.is-loading::before { animation: none; }
+    .light-card.is-alert .light-icon { animation: none; }
 }
 
 /* Công tắc đổi vị trí nút tròn và màu nền khi bật hoặc tắt. */
@@ -223,6 +253,15 @@
     outline-offset: 3px;
 }
 
+/* Hàng cuối: biểu đồ chiếm hai phần, ngưỡng chiếm một phần. */
+.dashboard-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+}
+
 /* Khung biểu đồ chung cho ba cảm biến. */
 .chart-card {
     display: flex;
@@ -255,9 +294,167 @@
     color: #64748b;
 }
 
+.threshold-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    padding: 10px 14px;
+    overflow-y: auto;
+}
+
+.threshold-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.threshold-heading .chart-title {
+    margin-bottom: 0;
+}
+
+.threshold-edit-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #315d78;
+    cursor: pointer;
+}
+
+.threshold-edit-button:hover:not(:disabled) {
+    background: #f4fbff;
+}
+
+.threshold-edit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.threshold-edit-button:focus-visible {
+    outline: 2px solid #328fc8;
+    outline-offset: 2px;
+}
+
+.threshold-fields {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-evenly;
+    gap: 8px;
+}
+
+.threshold-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.threshold-card.is-editing .threshold-field {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 5px;
+}
+
+.threshold-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.threshold-value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: #213f52;
+    white-space: nowrap;
+}
+
+.threshold-value strong {
+    font-size: 22px;
+}
+
+.threshold-value > span {
+    color: #64748b;
+    font-weight: 400;
+}
+
+.threshold-input-wrap input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid #d5e9ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #213f52;
+    font: inherit;
+}
+
+.threshold-input-wrap input:focus-visible {
+    outline: 2px solid #328fc8;
+    outline-offset: 2px;
+}
+
+.threshold-input-wrap > span {
+    min-width: 24px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.threshold-actions {
+    margin-top: auto;
+}
+
+.threshold-actions button {
+    padding: 9px 14px;
+    border: 1px solid #b5d2e2;
+    border-radius: 8px;
+    background: #f4fbff;
+    color: #315d78;
+    font-weight: 600;
+}
+
+.threshold-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.threshold-actions p {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+    .dashboard {
+        grid-template-rows: auto auto auto;
+        overflow-y: auto;
+    }
+
+    .dashboard-bottom-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .chart-card {
+        min-height: 320px;
+    }
+}
+
 /* Màn hình vừa: thu icon cảm biến và ẩn icon đèn để dành chỗ. */
 @media (max-width: 850px) {
-    .light-icon {
+    .light-card:not(.is-alert) .light-icon {
         display: none;
     }
 

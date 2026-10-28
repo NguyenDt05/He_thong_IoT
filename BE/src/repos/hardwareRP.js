@@ -1,4 +1,5 @@
 const db = require("../db");
+const alerts = require("./alertRP");
 const { formatDateTime } = require("./rowFormat");
 
 const SENSOR_TYPES = ["TEMPERATURE", "HUMIDITY", "LIGHT"];
@@ -45,7 +46,8 @@ async function saveReadings(readings) {
         await connection.beginTransaction();
         const ids = [...new Set(readings.map((row) => row.sensorId))];
         const [sensors] = await connection.query(
-            `SELECT sensor_id FROM sensors WHERE sensor_id IN (${ids.map(() => "?").join(",")})`, ids,
+            `SELECT sensor_id AS sensorId, sensor_type AS sensorType
+             FROM sensors WHERE sensor_id IN (${ids.map(() => "?").join(",")})`, ids,
         );
         if (sensors.length !== ids.length) {
             const error = new Error("sensorId không tồn tại");
@@ -55,11 +57,14 @@ async function saveReadings(readings) {
         const [[{ receivedAt }]] = await connection.query(
             "SELECT CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00') AS receivedAt",
         );
+        const day = String(receivedAt).slice(0, 10);
+        const types = new Map(sensors.map((sensor) => [sensor.sensorId, sensor.sensorType]));
         for (const reading of readings) {
             await connection.execute(
                 "INSERT INTO data_sensor (sensor_id, value, created_at) VALUES (?, ?, ?)",
                 [reading.sensorId, reading.value, receivedAt],
             );
+            await alerts.recordReading(connection, reading.sensorId, types.get(reading.sensorId), reading.value, day);
         }
         await connection.commit();
         return readings.length;
