@@ -128,7 +128,7 @@ function Profile() {
                   {error && <p className="profile-error" role="alert">{error}</p>}
                   <div className="profile-edit-actions">
                     <button type="button" onClick={() => { setEditing(false); setError(""); }}>Hủy</button>
-                    <button type="submit" disabled={saving}>{saving ? "Đang lưu..." : "Lưu thông tin"}</button>
+                    <button type="submit" disabled={saving}>{saving ? "Đang lưu..." : "Lưu"}</button>
                   </div>
                 </form>
               ) : (

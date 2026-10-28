@@ -56,11 +56,12 @@
 /* Nút chính nổi bật; nút xóa giữ nền trung tính để phân biệt mức ưu tiên. */
 .search-button {
     color: #ffffff;
-    background: #000000;
+    border-color: #315d78;
+    background: #315d78;
 }
 
 .search-button:hover {
-    background: #184e6e;
+    background: #24475e;
 }
 
 .clear-button {
