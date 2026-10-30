@@ -1,0 +1,380 @@
+/* Nút ẩn ở góc dưới bên phải; chỉ lộ nhẹ khi rê chuột hoặc focus bàn phím. */
+.party-trigger {
+    position: fixed;
+    right: 6px;
+    bottom: 6px;
+    z-index: 2200;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, #7041f5 0, #7041f5 40%, transparent 70%);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.party-trigger:hover,
+.party-trigger:focus-visible {
+    opacity: 0.55;
+}
+
+.party-trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/* Lớp hiệu ứng phủ toàn màn hình, không chặn thao tác. */
+.party-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Một chú mèo rơi xuống chính giữa màn hình rồi quay tại chỗ. */
+.party-center-cat {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 6;
+    width: clamp(130px, 16vw, 210px);
+    animation: party-cat-drop 1.4s cubic-bezier(0.22, 0.85, 0.28, 1) both;
+    will-change: transform;
+}
+
+.party-cat-video {
+    display: block;
+    width: 100%;
+    border-radius: 18px;
+    filter: drop-shadow(0 12px 26px rgba(31, 26, 40, 0.3));
+    /* Bắt đầu xoay đúng lúc đèn disco và màu sắc hỗn loạn bật. */
+    animation: party-cat-spin 2.2s linear var(--spin-delay, 1.4s) infinite;
+    will-change: transform;
+}
+
+@keyframes party-cat-drop {
+    0% {
+        transform: translate(-50%, calc(-50% - 95vh)) rotate(-25deg);
+        opacity: 0;
+    }
+    20% { opacity: 1; }
+    100% {
+        transform: translate(-50%, -50%) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes party-cat-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Đèn disco: các chùm sáng màu quét tròn trên màn hình. */
+.party-disco {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    mix-blend-mode: screen;
+}
+
+.party-disco::before,
+.party-disco::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 170vmax;
+    height: 170vmax;
+    margin: -85vmax;
+    background: repeating-conic-gradient(from 0deg,
+        rgba(255, 0, 128, 0.4) 0deg 5deg,
+        transparent 5deg 15deg,
+        rgba(0, 229, 255, 0.34) 15deg 20deg,
+        transparent 20deg 32deg,
+        rgba(255, 230, 0, 0.3) 32deg 37deg,
+        transparent 37deg 50deg);
+    animation: party-disco-spin 7s linear infinite;
+    filter: blur(7px);
+}
+
+.party-disco::after {
+    animation-duration: 4.5s;
+    animation-direction: reverse;
+    opacity: 0.65;
+}
+
+@keyframes party-disco-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Dải cầu vồng nhấp nháy bảy màu phủ lên giao diện. */
+.party-rainbow {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(115deg,
+        #ff3b3b, #ff9d00, #ffe600, #3ddc84, #00cfff, #5b5ce2, #d43bff);
+    background-size: 500% 500%;
+    mix-blend-mode: overlay;
+    opacity: 0.22;
+    animation: party-rainbow-slide 1.2s linear infinite, party-rainbow-flash 0.4s steps(2, end) infinite;
+}
+
+@keyframes party-rainbow-slide {
+    to { background-position: 500% 0; }
+}
+
+@keyframes party-rainbow-flash {
+    50% { opacity: 0.08; }
+}
+
+/* Video gấu (đã cắt viền đen) xuất hiện ở bốn góc khi đèn disco bật. */
+.party-bear {
+    position: fixed;
+    z-index: 5;
+    width: clamp(150px, 18vw, 280px);
+    aspect-ratio: 480 / 362;
+    object-fit: cover;
+    border-radius: 16px;
+    filter: drop-shadow(0 12px 30px rgba(31, 26, 40, 0.35));
+    animation: party-bear-in 0.5s ease-out both;
+}
+
+.party-bear-tl { top: 14px; left: 14px; }
+.party-bear-tr { top: 14px; right: 14px; transform: scaleX(-1); }
+.party-bear-bl { bottom: 14px; left: 14px; }
+.party-bear-br { bottom: 14px; right: 14px; transform: scaleX(-1); }
+
+@keyframes party-bear-in {
+    from { opacity: 0; translate: 0 40vh; }
+    to { opacity: 1; translate: 0 0; }
+}
+
+/* Nhân vật bay theo đường cong; các icon mờ phía sau tạo vệt mượt. */
+.party-character {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.party-character-sprite,
+.party-flame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    offset-path: var(--path);
+    offset-anchor: center;
+    offset-rotate: 0deg;
+    animation: party-character-move var(--duration) linear var(--delay) infinite both;
+    will-change: offset-distance, rotate;
+}
+
+.party-character-sprite {
+    z-index: 2;
+    width: var(--size);
+    height: auto;
+    filter: drop-shadow(0 8px 14px rgba(31, 26, 40, 0.28));
+    animation-name: party-character-move, party-character-tilt;
+    animation-duration: var(--duration), 2.4s;
+    animation-delay: var(--delay), 0s;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite, infinite;
+    animation-direction: normal, alternate;
+    animation-fill-mode: both, none;
+}
+
+/* Icon lửa cầu vồng trễ dần theo quỹ đạo nên luôn nằm sau nhân vật. */
+.party-flame {
+    z-index: 1;
+    width: var(--flame-w);
+    animation-delay: calc(var(--delay) + var(--flame-lag));
+    pointer-events: none;
+}
+
+.party-flame::before {
+    content: "";
+    position: absolute;
+    inset: -45%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsl(var(--flame-hue) 100% 66% / 0.55), transparent 68%);
+    filter: blur(6px);
+    animation: party-flame-glow 0.16s steps(2, end) infinite alternate;
+}
+
+.party-flame::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 28% 22%, hsl(var(--flame-hue) 100% 76%) 0 6%, transparent 10%),
+        radial-gradient(circle at 76% 36%, hsl(calc(var(--flame-hue) + 60) 100% 70%) 0 5%, transparent 9%),
+        radial-gradient(circle at 46% 78%, hsl(calc(var(--flame-hue) + 120) 100% 72%) 0 4%, transparent 8%);
+    filter: blur(1px);
+    animation: party-flame-spark 0.22s steps(2, end) infinite alternate;
+}
+
+.party-flame-outer,
+.party-flame-inner {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    transform-origin: 50% 88%;
+}
+
+.party-flame-outer {
+    inset: 0;
+    color: hsl(var(--flame-hue) 95% 58%);
+    filter: drop-shadow(0 0 9px hsl(var(--flame-hue) 100% 62%));
+    animation: party-flame-burn 0.18s steps(2, end) infinite alternate;
+}
+
+.party-flame-inner {
+    left: 24%;
+    bottom: 6%;
+    width: 52%;
+    color: #fff4b8;
+    opacity: 0.95;
+    animation: party-flame-core 0.13s steps(2, end) infinite alternate;
+}
+
+@keyframes party-character-move {
+    from { offset-distance: 0%; }
+    to { offset-distance: 100%; }
+}
+
+@keyframes party-character-tilt {
+    from { rotate: -6deg; }
+    to { rotate: 6deg; }
+}
+
+@keyframes party-flame-burn {
+    from { scale: 1 0.92; rotate: -4deg; }
+    to { scale: 1.08 1.14; rotate: 5deg; }
+}
+
+@keyframes party-flame-core {
+    from { scale: 1; }
+    to { scale: 1.16 0.88; }
+}
+
+@keyframes party-flame-glow {
+    from { opacity: 0.55; scale: 0.9; }
+    to { opacity: 1; scale: 1.12; }
+}
+
+@keyframes party-flame-spark {
+    from { opacity: 0.5; scale: 0.92; }
+    to { opacity: 1; scale: 1.06; }
+}
+
+/* Nền ứng dụng nhảy qua lại giữa bảy màu và đổi sắc liên tục. */
+.party-mode .main-layout {
+    animation:
+        party-hue 2s linear infinite,
+        party-app-bg 0.7s steps(7, end) infinite;
+}
+
+@keyframes party-hue {
+    to { filter: hue-rotate(360deg); }
+}
+
+@keyframes party-app-bg {
+    0% { background-color: #ffe3ef; }
+    14% { background-color: #fff0d6; }
+    28% { background-color: #fdfbcd; }
+    42% { background-color: #dcf7e4; }
+    56% { background-color: #d7f4fb; }
+    70% { background-color: #e2e4ff; }
+    84% { background-color: #f4dcff; }
+    100% { background-color: #ffe3ef; }
+}
+
+/* Mỗi khối nhận thông số ngẫu nhiên từ JS và bay loạn theo quỹ đạo riêng. */
+.party-mode .party-chaos {
+    animation: party-chaos var(--party-duration, 0.8s) ease-in-out var(--party-delay, 0s) infinite alternate;
+    will-change: transform;
+}
+
+@keyframes party-chaos {
+    0% {
+        transform: translate(var(--cx1, 0), var(--cy1, 0))
+            rotate(var(--cr1, 0)) scale(var(--cs1, 1));
+    }
+    50% {
+        transform: translate(var(--cx2, 0), var(--cy2, 0))
+            rotate(var(--cr2, 0)) scale(var(--cs2, 1));
+    }
+    100% {
+        transform: translate(var(--cx3, 0), var(--cy3, 0))
+            rotate(var(--cr3, 0)) scale(var(--cs3, 1));
+    }
+}
+
+/* Chữ đổi màu liên tục, mỗi khối lệch nhịp nhau. */
+.party-mode :is(h1, h2, h3, h4, p, span, strong, small, label, td, th, li, a, time) {
+    animation: party-text-color var(--party-text-duration, 0.5s) steps(7, end)
+        var(--party-text-delay, 0s) infinite;
+}
+
+@keyframes party-text-color {
+    0% { color: #ff1d5c; }
+    14% { color: #ff7a00; }
+    28% { color: #d4a600; }
+    42% { color: #12a150; }
+    56% { color: #0a91b0; }
+    70% { color: #2f5cff; }
+    84% { color: #a335e8; }
+    100% { color: #ff1d5c; }
+}
+
+@media (max-width: 700px) {
+    .party-bear {
+        width: clamp(100px, 27vw, 170px);
+    }
+
+    .party-bear-tl,
+    .party-bear-tr {
+        top: 8px;
+    }
+
+    .party-bear-bl,
+    .party-bear-br {
+        bottom: 8px;
+    }
+
+    .party-bear-tl,
+    .party-bear-bl {
+        left: 8px;
+    }
+
+    .party-bear-tr,
+    .party-bear-br {
+        right: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .party-mode .main-layout,
+    .party-mode .party-chaos,
+    .party-mode :is(h1, h2, h3, h4, p, span, strong, small, label, td, th, li, a, time),
+    .party-rainbow,
+    .party-disco::before,
+    .party-disco::after,
+    .party-cat-video {
+        animation: none;
+    }
+
+    .party-center-cat {
+        animation: none;
+        transform: translate(-50%, -50%);
+    }
+
+    .party-character {
+        display: none;
+    }
+}
