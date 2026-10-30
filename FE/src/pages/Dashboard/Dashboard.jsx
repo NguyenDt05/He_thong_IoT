@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from "react";
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Thermometer as ThermometerGlyph, Droplet, Sun, Lightbulb, ChevronUp, ChevronDown, Wifi, WifiOff, Zap } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import MainLayout from "../../layouts/MainLayout";
@@ -10,17 +10,16 @@ import { layTrangThaiMach_sv } from "../../services/hardwareSV";
 import { layCanhBao_sv } from "../../services/alertSV";
 import { dinhdang } from "../../utils/formatDate";
 import { formatSensorValue } from "../../utils/formatSensorValue";
-import Thermometer from "../../components/Thermometer";
-import HumidityIcon from "../../components/HumidityIcon";
-import LightIcon from "../../components/LightIcon";
+import LightGauge from "../../components/LightGauge";
 import { gopDuLieuBieuDo, SO_DIEM_HIEN_THI, taoDiemBieuDo } from "./sensorChartData";
 import "./Dashboard.css";
+import "./DashboardLayout.css";
 
 // Cấu hình cảm biến và thiết bị
 const DS_CAM_BIEN = [
-  { type: "TEMPERATURE", title: "Nhiệt độ", unit: "°C", tone: "temperature", chartColor: "#ec7656" },
-  { type: "HUMIDITY", title: "Độ ẩm", unit: "%", tone: "humidity", chartColor: "#328fc8" },
-  { type: "LIGHT", title: "Ánh sáng", unit: "%", tone: "light", chartColor: "#e0a62c" },
+  { type: "TEMPERATURE", title: "Nhiệt độ", unit: "°C", tone: "temperature", chartColor: "#ec7656", icon: ThermometerGlyph },
+  { type: "HUMIDITY", title: "Độ ẩm", unit: "%", tone: "humidity", chartColor: "#328fc8", icon: Droplet },
+  { type: "LIGHT", title: "Ánh sáng", unit: "%", tone: "light", chartColor: "#e0a62c", icon: Sun },
 ];
 
 const KEY_DU_LIEU_CB = "iot-dashboard-latest-real-v2";
@@ -31,74 +30,6 @@ const THOI_GIAN_CAP_NHAT_CANH_BAO = 10000;
 const THOI_GIAN_CHO_TRANG_THAI_MACH = 3000;
 const LOAI_CAM_BIEN = DS_CAM_BIEN.map((cb) => cb.type);
 
-const thangTemp = { //thang màu nhiệt độ
-  min: -10,
-  max: 60,
-  colors: [
-    { percent: 0, color: "#4B0082" },
-    { percent: 10, color: "#0000FF" },
-    { percent: 22, color: "#6495ED" },
-    { percent: 36, color: "#00CED1" },
-    { percent: 50, color: "#32CD32" },
-    { percent: 62, color: "#FFD700" },
-    { percent: 72, color: "#FF8C00" },
-    { percent: 82, color: "#FF0000" },
-    { percent: 100, color: "#8B0000" },
-  ],
-};
-// Lấy màu tương ứng với nhiệt độ
-function getTempColor(temp) {
-  // 1. Kiểm tra nhiệt độ hợp lệ
-  if (typeof temp !== "number" || !Number.isFinite(temp)) {
-    return "#64748b";
-  }
-
-  // 2. Quy đổi nhiệt độ sang phần trăm (0-100%)
-  const tempMin = thangTemp.min;
-  const tempMax = thangTemp.max;
-
-  const curr_percent = Math.min(100, Math.max(0,
-    ((temp - tempMin) / (tempMax - tempMin)) * 100
-  ));
-
-  // 3. Tìm hai mốc màu bao quanh phần trăm nhiệt độ
-
-  //lấy mảng màu và hàm tìm vtri mốc màu
-  const dsMau = thangTemp.colors;
-  const viTriMauTren = dsMau.findIndex(
-    (mocMau) => mocMau.percent >= curr_percent
-  );
-
-    // Nếu nhiệt độ nhỏ hơn mốc màu đầu tiên, trả về màu đầu tiên
-    // Nếu nhiệt độ lớn hơn mốc màu cuối cùng, trả về màu cuối cùng
-  if (viTriMauTren === 0) return dsMau[0].color;
-  if (viTriMauTren === -1) return dsMau.at(-1).color;
-
-  // Lấy mốc màu dưới và trên
-  const mauDuoi = dsMau[viTriMauTren - 1];
-  const mauTren = dsMau[viTriMauTren];
-
-  // 4. Tính tỷ lệ pha giữa hai màu. Xem màu hiện tại chiếm bao nhiêu phần trăm giữa hai mốc màu
-  const tyLePha =
-    (curr_percent - mauDuoi.percent) / (mauTren.percent - mauDuoi.percent);
-
-  // 5. Pha từng kênh RGB của hai màu
-  function phaKenhMau(viTri) {
-    // lấy mã HEX từ chuỗi, chuỗi đang ở hệ thập lục phân (HEX), cần chuyển sang số nguyên
-    const giaTriDuoi = parseInt(mauDuoi.color.slice(viTri, viTri + 2), 16);
-    const giaTriTren = parseInt(mauTren.color.slice(viTri, viTri + 2), 16);
-
-    const giaTriPha = Math.round(
-      giaTriDuoi + (giaTriTren - giaTriDuoi) * tyLePha
-    );
-
-    //cuyển kết quả sang chuỗi HEX
-    return giaTriPha.toString(16).padStart(2, "0");
-  }
-
-  // 6. Ghép ba kênh Red, Green, Blue thành mã HEX
-  return `#${phaKenhMau(1)}${phaKenhMau(3)}${phaKenhMau(5)}`;
-}
 // localStorage
 function docObject(key) {
   try {
@@ -483,133 +414,176 @@ function Dashboard() {
     }
   }
 
+  // Khối hiển thị một cảm biến: tên, chỉ số, số lần vượt ngưỡng và biểu tượng.
+  function hienThiCamBien(cb, className) {
+    const moiNhat = duLieuCB[cb.type];
+    const temperature = cb.type === "TEMPERATURE" && moiNhat ? Number(moiNhat.value) : null;
+    const light = cb.type === "LIGHT" && moiNhat ? Number(moiNhat.value) : null;
+    const vuotNguong = trangThaiMach === "connected"
+      && moiNhat && thoiDiemKiemTra - Date.parse(moiNhat.createdAt) <= 10000
+      && Number(moiNhat.value) > canhBao?.thresholds?.[cb.type];
+
+    const Icon = cb.type === "LIGHT" ? Zap : cb.icon;
+
+    return (
+      <article className={`${className} ${cb.tone}`} key={cb.type}>
+        <div className="env-head">
+          <span className="env-glyph" aria-hidden="true"><Icon size={16} strokeWidth={2} /></span>
+          <span className="sensor-card-label">{cb.title}</span>
+        </div>
+        {cb.type === "LIGHT" ? <LightGauge value={light} /> : <div className="env-body">
+          <div className="sensor-reading">
+            <strong>{temperature > 0 ? "+" : ""}{formatSensorValue(moiNhat?.value)}</strong>
+            <span>{moiNhat?.unit || cb.unit}</span>
+          </div>
+        </div>}
+        {cb.type === "TEMPERATURE" && (
+          <div className="env-temperature-ruler" aria-hidden="true">
+            {Array.from({ length: 11 }, (_, index) => (
+              <i key={index} className={temperature !== null && index >= 10 - Math.round(Math.max(0, Math.min(1, (temperature + 10) / 70)) * 10) ? "is-filled" : ""} />
+            ))}
+          </div>
+        )}
+        {cb.type === "HUMIDITY" && <div className="env-humidity-detail" aria-hidden="true"><ChevronUp size={15} /><ChevronDown size={15} /></div>}
+        <span className={`sensor-alert-count${vuotNguong ? " is-alert" : ""}`}>
+          {`Vượt ngưỡng hôm nay: ${canhBao?.counts?.[cb.type] ?? "—"} lần`}
+        </span>
+      </article>
+    );
+  }
+
   // Giao diện
   return (
-    <MainLayout title="Dashboard" description="Tổng quan dữ liệu cảm biến và trạng thái thiết bị">
+    <MainLayout className="dashboard-layout" title="Dashboard"
+      description="Tổng quan dữ liệu cảm biến và trạng thái thiết bị"
+      headerActions={
+        <span className={`dashboard-connection ${trangThaiMach}`} role="status">
+          <i aria-hidden="true" />
+          {trangThaiMach === "connected" ? "Đang kết nối" : trangThaiMach === "loading" ? "Đang kiểm tra" : "Mất kết nối"}
+        </span>
+      }>
       <div className="dashboard">
-        {/* Ba ô nhiệt độ, độ ẩm, ánh sáng. */}
-        <section className="dashboard-section">
-          <div className="dashboard-sensor-header">
-            <span>{thoiGianDuLieu === null ? "Chưa có dữ liệu" : `Cập nhật: ${dinhdang(thoiGianDuLieu)}`}</span>
-            {trangThaiMach !== "connected" && trangThaiMach !== "loading" && (
-              <span className="dashboard-hardware-error" role="alert">Lỗi kết nối phần cứng</span>
-            )}
-          </div>
-          <div className="dashboard-grid">
-            {DS_CAM_BIEN.map((cb) => {
-              const moiNhat = duLieuCB[cb.type];
-              const temperature = cb.type === "TEMPERATURE" && moiNhat ? Number(moiNhat.value) : null;
-              const humidity = cb.type === "HUMIDITY" && moiNhat ? Number(moiNhat.value) : null;
-              const light = cb.type === "LIGHT" && moiNhat ? Number(moiNhat.value) : null;
-              const sensorStyle = cb.type === "TEMPERATURE"
-                ? { "--sensor-color": getTempColor(temperature) }
-                : undefined;
-              const vuotNguong = trangThaiMach === "connected"
-                && moiNhat && thoiDiemKiemTra - Date.parse(moiNhat.createdAt) <= 10000
-                && Number(moiNhat.value) > canhBao?.thresholds?.[cb.type];
-
-              return (
-                // Tên và chỉ số xếp dọc bên trái, biểu tượng căn giữa bên phải.
-                <article className={`dashboard-card sensor-card ${cb.tone}`} key={cb.type} style={sensorStyle}>
-                  <div className="sensor-card-info">
-                    <span className="sensor-card-label">{cb.title}</span>
-                    <div className="sensor-reading">
-                      <strong>{formatSensorValue(moiNhat?.value)}</strong>
-                      <span>{moiNhat?.unit || cb.unit}</span>
-                    </div>
-                    <span className={`sensor-alert-count${vuotNguong ? " is-alert" : ""}`}>
-                      {`Vượt ngưỡng hôm nay: ${canhBao?.counts?.[cb.type] ?? "—"} lần`}
-                    </span>
-                  </div>
-                  <div className="sensor-card-icon">
-                    {cb.type === "TEMPERATURE" && <Thermometer temperature={temperature} scale={thangTemp} />}
-                    {cb.type === "HUMIDITY" && <HumidityIcon humidity={humidity} />}
-                    {cb.type === "LIGHT" && <LightIcon light={light} />}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Cụm điều khiển đèn: mỗi thiết bị có một thẻ và một công tắc bật/tắt. */}
-        <section className="dashboard-section">
-          <div className="dashboard-grid dashboard-light-grid">
-            {(dsThietBi ?? []).map((thietBi) => {
-              const id = thietBi.deviceId;
-              const dangBat = thietBi.status === "ON";
-              const dangCho = idDangCapNhat === id || Boolean(thietBi.pendingActionId);
-              const tenDen = thietBi.deviceName || `Đèn ${id}`;
-              const status = dangCho ? "Đang chờ mạch..." : dangBat ? "Đang bật" : "Đang tắt";
-              const sensor = DS_CAM_BIEN.find((cb) => cb.type ===
-                (Number(id) === 1 ? "TEMPERATURE" : Number(id) === 2 ? "HUMIDITY" : Number(id) === 3 ? "LIGHT" : null));
-              const reading = sensor && duLieuCB[sensor.type];
-              const dangCanhBao = trangThaiMach === "connected" && reading
-                && thoiDiemKiemTra - Date.parse(reading.createdAt) <= 10000
-                && Number(reading.value) > canhBao?.thresholds?.[sensor.type];
-
-              return (
-                // Thẻ đèn hiển thị biểu tượng, tên, trạng thái và nút gạt điều khiển.
-                <article className={`dashboard-card light-card${dangBat ? " is-on" : ""}${dangCanhBao ? " is-alert" : ""}`} key={id}>
-                  <span className="light-icon" aria-hidden="true">💡</span>
-                  <div className="light-card-details">
-                    <h3>{tenDen}</h3>
-                    <span className={`light-card-status${dangCho ? " is-loading" : ""}`} role="status">
-                      {dangCanhBao ? `Cảnh báo ${sensor.title} · Đang nhấp nháy` : status}
-                    </span>
-                  </div>
-                  <button className="light-switch" type="button" role="switch"
-                    aria-label={`Bật tắt ${tenDen}`} aria-checked={dangBat} aria-busy={dangCho}
-                    disabled={idDangCapNhat !== null || Boolean(thietBi.pendingActionId)
-                      || trangThaiMach !== "connected" || loiThietBi}
-                    onClick={() => batTatDen(thietBi)}>
-                    <span />
-                  </button>
-                </article>
-              );
-            })}
-            {/* Dòng thông báo khi chưa có thẻ thiết bị để hiển thị. */}
-            {(dsThietBi === null || dsThietBi.length === 0) && (
-              <p className="dashboard-device-empty" role="status">
-                {dsThietBi === null ? "Đang tải thiết bị..." : loiThietBi ? "Lỗi tải thiết bị. Không thể kết nối API." : "Chưa có thiết bị"}
-              </p>
-            )}
-            {loiDieuKhien && <p className="dashboard-device-empty" role="alert">{loiDieuKhien}</p>}
-          </div>
-        </section>
-
-        {/* Biểu đồ và khung cài đặt ngưỡng dùng chung hàng cuối. */}
-        <section className="dashboard-section">
-          <div className="dashboard-bottom-grid">
-            <div className="dashboard-card chart-card">
-              <h2 className="chart-title">Biểu đồ dữ liệu</h2>
-              {duLieuBieuDo.length === 0
-                ? <div className="chart-empty" role="status">
-                    {trangThaiMach === "loading" ? "Đang tải dữ liệu..." : "Chưa có dữ liệu"}
-                  </div>
-                : <SensorChart rows={duLieuBieuDo} />}
-            </div>
-            <div className={`dashboard-card threshold-card${dangChinhSuaNguong ? " is-editing" : ""}`}>
-              <div className="threshold-heading">
-                <h2 className="chart-title">Thiết lập ngưỡng</h2>
-                <button className="threshold-edit-button" type="button"
-                  aria-label={dangChinhSuaNguong ? "Hủy chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}
-                  disabled={!dangChinhSuaNguong && !canhBao?.thresholds}
-                  onClick={() => {
-                    if (dangChinhSuaNguong) {
-                      setDangChinhSuaNguong(false);
-                    } else {
-                      setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
-                        [cb.type, String(canhBao.thresholds[cb.type] ?? "")])));
-                      setDangChinhSuaNguong(true);
-                    }
-                  }}>
-                  {dangChinhSuaNguong ? <X size={18} aria-hidden="true" /> : <Pencil size={18} aria-hidden="true" />}
-                </button>
+        {/* Cột chính: cụm cảm biến phía trên và biểu đồ phía dưới. */}
+        <div className="dashboard-main">
+          <section className="dashboard-section">
+            <div className="env-grid">
+              {/* Hai chỉ số nhiệt độ và độ ẩm xếp dọc trong cột trái. */}
+              <div className="env-left">
+                {DS_CAM_BIEN.filter((cb) => cb.type !== "LIGHT")
+                  .map((cb) => hienThiCamBien(cb, "dashboard-card env-card"))}
               </div>
-              <div className="threshold-fields">
-                {DS_CAM_BIEN.map((cb) => (
+              {/* Đồng hồ ánh sáng chiếm chiều cao của cả hai thẻ bên trái. */}
+              <div className="env-light">
+                {DS_CAM_BIEN.filter((cb) => cb.type === "LIGHT")
+                  .map((cb) => hienThiCamBien(cb, "dashboard-card env-card env-light-card"))}
+              </div>
+            </div>
+          </section>
+
+          <div className="dashboard-card chart-card">
+            <div className="dashboard-chart-heading">
+              <div>
+                <h2 className="chart-title">Biểu đồ</h2>
+                <p>Nhiệt độ, độ ẩm và ánh sáng theo thời gian</p>
+              </div>
+              <span className="dashboard-chart-period">{SO_DIEM_HIEN_THI} số đo gần nhất</span>
+            </div>
+            {duLieuBieuDo.length === 0
+              ? <div className="chart-empty" role="status">
+                  {trangThaiMach === "loading" ? "Đang tải dữ liệu..." : "Chưa có dữ liệu"}
+                </div>
+              : <SensorChart rows={duLieuBieuDo} />}
+          </div>
+        </div>
+
+        {/* Cột phụ: một thẻ chứa toàn bộ thiết bị và khung thiết lập ngưỡng. */}
+        <aside className="dashboard-side">
+          <section className={`dashboard-overview ${trangThaiMach}`} aria-label="Tóm tắt hệ thống">
+            <div className="overview-art" aria-hidden="true"><Sun size={104} strokeWidth={1} /></div>
+            <span className="overview-eyebrow">KHÔNG GIAN CỦA BẠN</span>
+            <div className="overview-temperature">{formatSensorValue(duLieuCB.TEMPERATURE?.value)}<span>°C</span></div>
+            <p><Droplet size={14} aria-hidden="true" /> Độ ẩm {formatSensorValue(duLieuCB.HUMIDITY?.value)}%</p>
+            <div className="overview-status">
+              {trangThaiMach === "connected" ? <Wifi size={15} aria-hidden="true" /> : <WifiOff size={15} aria-hidden="true" />}
+              <span>{trangThaiMach === "connected" ? "Hệ thống đang hoạt động" : trangThaiMach === "loading" ? "Đang kiểm tra kết nối" : "Thiết bị chưa kết nối"}</span>
+            </div>
+          </section>
+          <section className="dashboard-card device-panel">
+            <div className="panel-heading">
+              <h2 className="chart-title">Thiết bị</h2>
+              <span className="panel-count">{(dsThietBi ?? []).length} thiết bị</span>
+            </div>
+            <div className="device-grid">
+              {(dsThietBi ?? []).map((thietBi) => {
+                const id = thietBi.deviceId;
+                const dangBat = thietBi.status === "ON";
+                const dangCho = idDangCapNhat === id || Boolean(thietBi.pendingActionId);
+                const tenDen = thietBi.deviceName || `Đèn ${id}`;
+                const status = dangCho ? "Đang chờ mạch..." : dangBat ? "Đang bật" : "Đang tắt";
+                const sensor = DS_CAM_BIEN.find((cb) => cb.type ===
+                  (Number(id) === 1 ? "TEMPERATURE" : Number(id) === 2 ? "HUMIDITY" : Number(id) === 3 ? "LIGHT" : null));
+                const reading = sensor && duLieuCB[sensor.type];
+                const dangCanhBao = trangThaiMach === "connected" && reading
+                  && thoiDiemKiemTra - Date.parse(reading.createdAt) <= 10000
+                  && Number(reading.value) > canhBao?.thresholds?.[sensor.type];
+
+                return (
+                  // Ô thiết bị: biểu tượng và công tắc cùng hàng, tên và trạng thái bên dưới.
+                  <article className={`light-card${dangBat ? " is-on" : ""}${dangCanhBao ? " is-alert" : ""}`} key={id}>
+                    <span className="light-icon" aria-hidden="true"><Lightbulb size={24} strokeWidth={2} /></span>
+                    <div className="light-card-details">
+                      <h3>{tenDen}</h3>
+                      <span className={`light-card-status${dangCho ? " is-loading" : ""}`} role="status"
+                        title={dangCanhBao ? `Cảnh báo ${sensor.title} · Đang nhấp nháy` : status}>
+                        {dangCanhBao ? `Cảnh báo ${sensor.title} · nhấp nháy` : status}
+                      </span>
+                    </div>
+                    <button className="light-switch" type="button" role="switch"
+                      aria-label={`Bật tắt ${tenDen}`} aria-checked={dangBat} aria-busy={dangCho}
+                      disabled={idDangCapNhat !== null || Boolean(thietBi.pendingActionId)
+                        || trangThaiMach !== "connected" || loiThietBi}
+                      onClick={() => batTatDen(thietBi)}>
+                      <span />
+                    </button>
+                  </article>
+                );
+              })}
+              {/* Dòng thông báo khi chưa có thiết bị để hiển thị. */}
+              {(dsThietBi === null || dsThietBi.length === 0) && (
+                <p className="dashboard-device-empty" role="status">
+                  {dsThietBi === null ? "Đang tải thiết bị..." : loiThietBi ? "Lỗi tải thiết bị. Không thể kết nối API." : "Chưa có thiết bị"}
+                </p>
+              )}
+              {loiDieuKhien && <p className="dashboard-device-empty" role="alert">{loiDieuKhien}</p>}
+            </div>
+          </section>
+
+          <div className={`dashboard-card threshold-card${dangChinhSuaNguong ? " is-editing" : ""}`}>
+            <div className="threshold-heading">
+              <h2 className="chart-title">Thiết lập ngưỡng</h2>
+              <button className="threshold-edit-button" type="button"
+                aria-label={dangChinhSuaNguong ? "Hủy chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}
+                disabled={!dangChinhSuaNguong && !canhBao?.thresholds}
+                onClick={() => {
+                  if (dangChinhSuaNguong) {
+                    setDangChinhSuaNguong(false);
+                  } else {
+                    setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
+                      [cb.type, String(canhBao.thresholds[cb.type] ?? "")])));
+                    setDangChinhSuaNguong(true);
+                  }
+                }}>
+                {dangChinhSuaNguong ? <X size={18} aria-hidden="true" /> : <Pencil size={18} aria-hidden="true" />}
+              </button>
+            </div>
+            <div className="threshold-fields">
+              {DS_CAM_BIEN.map((cb) => {
+                const Icon = cb.icon;
+                return (
                   <div className="threshold-field" key={cb.type}>
+                    <span className={`threshold-icon ${cb.tone}`} aria-hidden="true">
+                      <Icon size={20} strokeWidth={2} />
+                    </span>
                     {dangChinhSuaNguong ? (
                       <>
                         <label htmlFor={`threshold-${cb.type}`}>{cb.title}</label>
@@ -623,7 +597,7 @@ function Dashboard() {
                       </>
                     ) : (
                       <>
-                        <span>{cb.title}</span>
+                        <span className="threshold-name">{cb.title}</span>
                         <span className="threshold-value">
                           <strong>{canhBao?.thresholds?.[cb.type] ?? "—"}</strong>
                           <span>{cb.unit}</span>
@@ -631,17 +605,18 @@ function Dashboard() {
                       </>
                     )}
                   </div>
-                ))}
-              </div>
-              {dangChinhSuaNguong && (
-                <div className="threshold-actions">
-                  <button type="button" disabled>Lưu</button>
-                  <p>Chưa thể lưu ngưỡng ở phiên bản này.</p>
-                </div>
-              )}
+                );
+              })}
             </div>
+            {dangChinhSuaNguong && (
+              <div className="threshold-actions">
+                <button type="button" disabled>Lưu</button>
+                <p>Chưa thể lưu ngưỡng ở phiên bản này.</p>
+              </div>
+            )}
           </div>
-        </section>
+          <p className="dashboard-update-note">{thoiGianDuLieu === null ? "Đang chờ số đo đầu tiên" : `Đồng bộ lần cuối: ${dinhdang(thoiGianDuLieu)}`}</p>
+        </aside>
       </div>
     </MainLayout>
   );

@@ -1,76 +1,102 @@
-
-/* Sidebar cố định chiều rộng, phủ hết chiều cao và tách khỏi vùng nội dung. */
+/* Sidebar cố định chiều rộng, phủ hết chiều cao với tông tím nhạt của Dashboard. */
 .sidebar {
     width: 250px;
     height: 100vh;
-    background-color: #e6f5fa;
-    border-right: 1px solid #c5d9ff;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    background-color: var(--surface);
+    border-right: 1px solid var(--line);
 }
 
 /* Vùng thương hiệu ở đầu thanh điều hướng. */
 .sidebar-logo {
-    height: 72px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 35px;
-    font-weight: bold;
-    border-bottom: 1px solid #c5d9ff;
-    color: inherit;
-    text-decoration: none;
+    height: 84px;
+    padding: 0 24px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--accent-ink);
+}
+
+.sidebar-logo::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    margin-right: 9px;
+    border-radius: 50%;
+    background: linear-gradient(140deg, #9a6bff, #5b3dbf);
 }
 
 /* Danh sách liên kết chính với khoảng đệm cho từng mục. */
 .sidebar-menu {
-    padding: 35px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 14px 0;
 }
 
 .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-inline: 12px; /* Khoảng cách trái phải của từng mục. */
-    margin-block: 5px; /* Khoảng cách trên dưới của từng mục. */
-    padding: 18px 16px;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: var(--radius-control);
+    color: var(--ink-soft);
+    font-size: 14px;
     font-weight: 500;
-    font-size: 16px;
-    color: inherit;
     text-decoration: none;
-    border-radius: 11px;
+    transition: background-color 0.2s, color 0.2s;
 }
 
-/* Mục đang rê chuột hoặc đang mở có nền riêng để dễ nhận biết. */
+.sidebar-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
 .sidebar-item:hover {
-    background-color: #d6e5ff;
+    background-color: var(--surface-soft);
+    color: var(--ink);
 }
 
 .sidebar-item.active {
-    background-color: #b8d0ff;
-    font-weight: bold;
+    background-color: var(--accent-soft);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.sidebar-item.active svg {
+    color: var(--accent);
 }
 
 .sidebar-user {
-    padding: 18px 16px;
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: 40px minmax(0, 1fr);
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-control);
+    color: var(--ink-soft);
+    font-size: 13px;
     font-weight: 500;
-    font-size: 16px;
-    color: inherit; /* Màu chữ kế thừa từ theme. */
-    text-decoration: none; /* Không gạch chân. */
-    cursor: pointer; /* Con trỏ chuột khi rê vào. */
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.sidebar-user:hover {
+    background-color: var(--surface-soft);
 }
 
 .sidebar-user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .sidebar-user-name {
@@ -81,22 +107,30 @@
 }
 
 .sidebar-account {
-    margin-top: auto;
     display: flex;
     align-items: center;
-    border-top: 1px solid #c5d9ff;
+    gap: 4px;
+    margin: auto 10px 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
 }
 
-.sidebar-account .sidebar-user { flex: 1; min-width: 0; }
+.sidebar-account .sidebar-user {
+    flex: 1;
+    min-width: 0;
+}
 
 .sidebar-login {
-    margin-top: auto;
     display: block;
-    padding: 25px 20px;
-    border-top: 1px solid #c5d9ff;
-    color: #213f52;
+    margin: auto 14px 16px;
+    padding: 12px 14px;
+    border-radius: var(--radius-control);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-size: 14px;
     font-weight: 600;
     text-decoration: none;
+    text-align: center;
 }
 
 .sidebar-logout {
@@ -106,34 +140,46 @@
     flex: 0 0 36px;
     width: 36px;
     height: 36px;
-    margin-right: 12px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: transparent;
-    color: #315d78;
+    color: var(--muted);
     cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
 }
 
-.sidebar-logout:hover, .sidebar-logout:focus-visible { background: #d6e5ff; }
+.sidebar-logout:hover,
+.sidebar-logout:focus-visible {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+}
+
 .sidebar-logout-tooltip {
     position: absolute;
     right: 0;
     bottom: calc(100% + 8px);
     padding: 8px 10px;
-    border-radius: 7px;
-    background: #213f52;
-    color: white;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
     font-size: 12px;
     white-space: nowrap;
-    box-shadow: 0 7px 18px rgba(33, 63, 82, .25);
+    box-shadow: 0 7px 18px rgba(63, 57, 73, 0.25);
     opacity: 0;
     pointer-events: none;
-    transition: opacity .15s;
+    transition: opacity 0.15s;
 }
-.sidebar-logout:hover .sidebar-logout-tooltip,
-.sidebar-logout:focus-visible .sidebar-logout-tooltip { opacity: 1; }
-.sidebar-logout-error { margin: 0 12px 10px; color: #b3232d; font-size: 12px; }
 
+.sidebar-logout:hover .sidebar-logout-tooltip,
+.sidebar-logout:focus-visible .sidebar-logout-tooltip {
+    opacity: 1;
+}
+
+.sidebar-logout-error {
+    margin: 0 14px 10px;
+    color: var(--danger);
+    font-size: 12px;
+}
 
 /* Màn hình vừa: thu chiều rộng sidebar và chữ thương hiệu. */
 @media (max-width: 1100px) {
@@ -142,7 +188,16 @@
     }
 
     .sidebar-logo {
-        font-size: 30px;
+        padding: 0 18px;
+        font-size: 19px;
+    }
+
+    .sidebar-menu {
+        padding-inline: 10px;
+    }
+
+    .sidebar-item {
+        padding: 12px;
     }
 }
 
@@ -152,25 +207,36 @@
         width: 100%;
         height: auto;
         border-right: 0;
-        border-bottom: 1px solid #c5d9ff;
+        border-bottom: 1px solid var(--line);
     }
 
     .sidebar-logo {
         height: 56px;
-        font-size: 28px;
+        font-size: 18px;
     }
 
     .sidebar-menu {
-        display: flex;
+        flex-direction: row;
         overflow-x: auto;
-        padding: 0;
+        padding: 0 10px 8px;
         scrollbar-width: thin;
     }
 
     .sidebar-item {
         flex: 0 0 auto;
-        padding: 12px 16px;
-        font-size: 14px;
+        gap: 8px;
+        padding: 10px 13px;
+        font-size: 13px;
         white-space: nowrap;
+    }
+
+    .sidebar-account {
+        margin: 0;
+        padding: 6px 10px;
+        border-top: 1px solid var(--line);
+    }
+
+    .sidebar-user {
+        padding: 6px 10px;
     }
 }

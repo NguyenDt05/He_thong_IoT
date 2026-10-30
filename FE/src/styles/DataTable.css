@@ -1,0 +1,36 @@
+/* A single visual surface for each table and its pagination footer. */
+:is(.data-sensor, .history) > .table {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: var(--radius-table) var(--radius-table) 0 0;
+}
+
+:is(.data-sensor, .history) > .footer {
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 0 0 var(--radius-table) var(--radius-table);
+    box-shadow: 0 6px 16px -14px rgb(63 57 73 / 16%);
+}
+
+:is(.sensor-table, .history-table) {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+:is(.sensor-table, .history-table) th {
+    color: var(--ink-soft);
+}
+
+@media (max-width: 700px) {
+    :is(.data-sensor, .history) > .table {
+        margin-top: 12px;
+        overflow-x: auto;
+    }
+}

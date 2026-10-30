@@ -1,3 +1,25 @@
+/* Bảng màu và kiểu chữ dùng chung, đồng bộ với trang Dashboard. */
+:root {
+    --app-bg: #f7f5fb;
+    --surface: #ffffff;
+    --surface-soft: #f5f3f9;
+    --surface-muted: #faf8fe;
+    --line: #ece7f3;
+    --line-strong: #e0d7ee;
+    --ink: #3f3949;
+    --ink-soft: #6f657d;
+    --muted: #9a92a6;
+    --accent: #7041f5;
+    --accent-hover: #5f33e0;
+    --accent-soft: #f2ecfd;
+    --accent-ink: #5b3dbf;
+    --danger: #cc4a66;
+    --success: #488d79;
+    --radius-card: 18px;
+    --radius-table: 14px;
+    --radius-control: 12px;
+}
+
 /* Chuẩn hóa box sizing và font kế thừa cho mọi phần tử giao diện. */
 *,
 *::before,
@@ -17,13 +39,13 @@ body,
 
 /* Thiết lập kiểu chữ, màu nền và cơ chế cuộn ở cấp toàn trang. */
 html {
-    font-family: Helvetica;
+    font-family: Helvetica, Arial, sans-serif;
 }
 
 body {
     overflow: hidden;
-    background-color: #f2fbfc;
-    color: #000000;
+    background-color: var(--app-bg);
+    color: var(--ink);
 }
 
 /* Các điều khiển nhập liệu dùng cùng font với phần nội dung. */
@@ -32,4 +54,10 @@ input,
 select,
 textarea {
     font: inherit;
+}
+
+/* Vòng focus thống nhất cho các phần tử tương tác. */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }

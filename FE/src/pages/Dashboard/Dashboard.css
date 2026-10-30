@@ -1,12 +1,29 @@
-/* Bố cục Dashboard gồm ba hàng: thẻ cảm biến, điều khiển đèn và biểu đồ. */
+/* Bố cục Dashboard hai cột: cột chính cho cảm biến và biểu đồ, cột phụ cho thiết bị. */
 .dashboard {
     height: 100%;
     min-height: 0;
     overflow: hidden;
     padding: 8px 2px 0 0;
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+    gap: 14px;
+}
+
+.dashboard-main {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 14px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.dashboard-side {
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 14px;
+    min-width: 0;
+    min-height: 0;
 }
 
 .dashboard-section {
@@ -28,125 +45,160 @@
     color: #dc2626;
 }
 
-/* Lưới thẻ chung; lưới đèn tự đổi số cột theo chỗ trống. */
-.dashboard-grid {
+/* Sensor cards and the light intensity dial. */
+.env-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 14px;
 }
-
-.dashboard-light-grid {
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-}
-
-/* Khung nền và viền dùng chung cho mọi thẻ trên Dashboard. */
-.dashboard-card {
-    min-width: 0;
-    background: #fff;
-    border: 1px solid #d5e9ef;
-    border-radius: 12px;
-}
-
-/* Thẻ cảm biến: tên và chỉ số bên trái, biểu tượng bên phải. */
-.sensor-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 64px;
-    align-items: center;
-    gap: 12px;
-    min-height: 112px;
-    padding: 8px 14px;
-    border-top: 3px solid var(--sensor-color);
-    transition: border-color 0.4s ease;
-}
-
+.env-left { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-width: 0; }
+.env-light { display: flex; min-width: 0; }
+.dashboard-card { min-width: 0; background: #fff; border: 1px solid #d5e9ef; border-radius: 12px; }
 .temperature { --sensor-color: #ec7656; }
 .humidity { --sensor-color: #328fc8; }
 .light { --sensor-color: #e0a62c; }
-
-/* Tên cảm biến nằm ngay trên giá trị. */
-.sensor-card-info {
+.env-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     justify-content: center;
-    gap: 8px;
+    flex: 1;
     min-width: 0;
+    min-height: 108px;
+    gap: 10px;
+    padding: 16px 54px 14px 18px;
+    border: 1px solid #f1f0f6;
+    border-radius: 20px;
+    box-shadow: 0 7px 22px -18px #aaa1c5;
+    color: #514d65;
 }
-
-.sensor-card-icon {
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
-}
-
-.light-icon {
-    width: 34px;
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9px;
-    font-size: 21px;
-    flex-shrink: 0;
-}
-
-.sensor-card-label {
-    color: #475569;
-    font-size: 14px;
+.env-head { display: flex; align-items: center; gap: 7px; }
+.env-glyph { display: inline-flex; color: #7a7287; }
+.env-card .sensor-card-label { color: #6b6478; font-size: 13px; font-weight: 500; }
+.env-body { display: flex; align-items: center; min-width: 0; }
+.sensor-reading { display: flex; align-items: baseline; gap: 1px; white-space: nowrap; }
+.env-card .sensor-reading strong {
+    color: #423b4c;
+    font-size: clamp(28px, 2.6vw, 36px);
     font-weight: 600;
-    text-align: left;
-}
-
-.sensor-reading {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    min-width: 0;
-    white-space: nowrap;
-    color: var(--sensor-color);
-    transition: color 0.4s ease;
-}
-
-.sensor-reading strong {
-    font-size: clamp(25px, 2.4vw, 32px);
     line-height: 1;
+    letter-spacing: -1.5px;
+    font-variant-numeric: tabular-nums;
+}
+.env-card .sensor-reading > span { color: #857e91; font-size: 15px; font-weight: 500; }
+.sensor-alert-count { color: #9a92a4; font-size: 11px; line-height: 1.3; }
+.sensor-alert-count.is-alert { color: #df5273; font-weight: 600; }
+.env-temperature-ruler {
+    position: absolute;
+    inset: 15px 12px 15px auto;
+    width: 30px;
+    padding: 9px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-radius: 12px;
+    background: #fff0f3;
+}
+.env-temperature-ruler i { width: 6px; height: 2px; flex-shrink: 0; border-radius: 2px; background: #f7cbd4; }
+.env-temperature-ruler i:nth-child(3n) { width: 12px; }
+.env-temperature-ruler i.is-filled { background: #ff6184; }
+.env-humidity-detail {
+    position: absolute;
+    inset: 16px 12px 16px auto;
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    border-radius: 12px;
+    background: #faf9fd;
+    color: #d9d4e7;
+}
+.env-light-card { padding: 16px 18px 12px; gap: 0; }
+.env-light-card .env-head { flex-shrink: 0; }
+.env-light-gauge { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 0; }
+.env-light-gauge svg { display: block; width: 100%; max-width: 245px; height: auto; overflow: visible; }
+.env-gauge-value { fill: #514d65; font-size: 30px; font-weight: 500; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.env-gauge-unit { font-size: 19px; letter-spacing: 0; }
+.env-gauge-limit { fill: #b9b4c6; font-size: 9px; }
+.env-gauge-marker { filter: drop-shadow(0 2px 2px #b2a0c844); }
+.env-light-card > .sensor-alert-count { text-align: center; }
+
+/* Thẻ bao toàn bộ thiết bị: tiêu đề, số lượng và lưới ô điều khiển. */
+.device-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    padding: 14px;
 }
 
-.sensor-reading span {
-    font-size: 14px;
-    font-weight: 600;
+.panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
-.sensor-alert-count {
+.panel-heading .chart-title {
+    margin-bottom: 0;
+}
+
+.panel-count {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #eef8fb;
     color: #64748b;
     font-size: 11px;
-    line-height: 1.2;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.sensor-alert-count.is-alert {
-    color: #dc2626;
-    font-weight: 700;
-}
-
-/* Thẻ đèn: biểu tượng, tên, trạng thái và công tắc nằm cùng một hàng. */
-.light-card {
+.device-grid {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
-    min-height: 72px;
-    padding: 10px 14px;
+    max-height: 320px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Hàng thiết bị: biểu tượng bên trái, tên và trạng thái ở giữa, công tắc bên phải. */
+.light-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #e7eff4;
+    border-radius: 14px;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.light-card:hover {
+    border-color: #cfe3ec;
+    box-shadow: 0 2px 10px -6px rgba(33, 63, 82, 0.35);
+}
+
+/* Biểu tượng bóng đèn: vàng khi bật, xám khi tắt. */
+.light-card .light-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    color: #a9b6c0;
+    background: #f3f7f9;
+    transition: color 0.2s, background 0.2s;
 }
 
 .light-card.is-on .light-icon {
-
-    filter: none;
-    opacity: 1;
-}
-
-.light-card .light-icon {
-    filter: grayscale(1);
-    opacity: 0.55;
+    color: #f0a800;
+    background: #fff6e0;
 }
 
 .light-card.is-alert {
@@ -154,7 +206,7 @@
 }
 
 .light-card.is-alert .light-icon {
-    filter: none;
+    color: #f0a800;
     animation: light-alert-blink 1s step-end infinite;
 }
 
@@ -168,18 +220,25 @@
 }
 
 .light-card-details {
-    flex: 1;
     min-width: 0;
 }
 
 .light-card-details h3 {
     margin: 0 0 3px;
+    overflow: hidden;
     font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-/* Trạng thái bật/tắt của đèn, dùng màu vàng khi bật. */
+/* Trạng thái luôn nằm trên một dòng để hàng thiết bị giữ nguyên chiều cao. */
 .light-card-details span {
+    display: block;
+    overflow: hidden;
     color: #64748b;
-    font-size: 11px;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 /* Khi đèn bật, đổi màu chữ trạng thái sang vàng. */
 .light-card.is-on .light-card-details span {
@@ -216,31 +275,32 @@
 .light-switch {
     display: inline-flex;
     align-items: center;
-    width: 46px;
-    height: 26px;
+    width: 52px;
+    height: 30px;
     padding: 3px;
     border: 0;
     border-radius: 999px;
-    background: #cbd5e1;
+    background: #d7e2e8;
     cursor: pointer;
     transition: background 0.2s;
     flex-shrink: 0;
 }
 
 .light-switch span {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: #fff;
+    box-shadow: 0 1px 3px rgba(33, 63, 82, 0.25);
     transition: transform 0.2s;
 }
 
 .light-switch[aria-checked="true"] {
-    background: #34C759;
+    background: #5b5ce2;
 }
 
 .light-switch[aria-checked="true"] span {
-    transform: translateX(20px);
+    transform: translateX(22px);
 }
 
 .light-switch:disabled {
@@ -253,23 +313,23 @@
     outline-offset: 3px;
 }
 
-/* Hàng cuối: biểu đồ chiếm hai phần, ngưỡng chiếm một phần. */
-.dashboard-bottom-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-    gap: 12px;
-    flex: 1;
-    min-height: 0;
-}
-
 /* Khung biểu đồ chung cho ba cảm biến. */
 .chart-card {
     display: flex;
     flex-direction: column;
-    flex: 1;
     min-height: 0;
     overflow: hidden;
     padding: 10px 14px 4px;
+}
+
+/* Thông báo khi chưa có hoặc không tải được thiết bị. */
+.dashboard-device-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 10px 0;
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
 }
 
 .chart-title {
@@ -299,7 +359,7 @@
     flex-direction: column;
     gap: 12px;
     min-height: 0;
-    padding: 10px 14px;
+    padding: 14px;
     overflow-y: auto;
 }
 
@@ -324,12 +384,12 @@
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: #315d78;
+    color: var(--accent-ink);
     cursor: pointer;
 }
 
 .threshold-edit-button:hover:not(:disabled) {
-    background: #f4fbff;
+    background: var(--accent-soft);
 }
 
 .threshold-edit-button:disabled {
@@ -345,27 +405,61 @@
 .threshold-fields {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    justify-content: space-evenly;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 10px;
 }
 
+/* Mỗi ngưỡng là một hàng có biểu tượng màu, tên và giá trị bên phải. */
 .threshold-field {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
-    min-height: 48px;
+    min-height: 64px;
+    padding: 8px 12px;
+    border: 1px solid #e7eff4;
+    border-radius: 14px;
+    background: #fff;
     color: #475569;
     font-size: 14px;
     font-weight: 600;
 }
 
+.threshold-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.threshold-icon.temperature {
+    color: #ec7656;
+    background: #fdeeeb;
+}
+
+.threshold-icon.humidity {
+    color: #328fc8;
+    background: #e9f4fc;
+}
+
+.threshold-icon.light {
+    color: #e0a62c;
+    background: #fdf6e3;
+}
+
+.threshold-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #334155;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .threshold-card.is-editing .threshold-field {
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: 5px;
+    grid-template-columns: auto minmax(0, 1fr) minmax(90px, 130px);
+    align-items: center;
 }
 
 .threshold-input-wrap {
@@ -377,17 +471,19 @@
 .threshold-value {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    color: #213f52;
+    gap: 6px;
+    color: var(--ink);
     white-space: nowrap;
 }
 
 .threshold-value strong {
-    font-size: 22px;
+    font-size: 24px;
+    font-weight: 700;
 }
 
 .threshold-value > span {
     color: #64748b;
+    font-size: 13px;
     font-weight: 400;
 }
 
@@ -398,7 +494,7 @@
     border: 1px solid #d5e9ef;
     border-radius: 8px;
     background: #fff;
-    color: #213f52;
+    color: var(--ink);
     font: inherit;
 }
 
@@ -419,10 +515,10 @@
 
 .threshold-actions button {
     padding: 9px 14px;
-    border: 1px solid #b5d2e2;
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
-    background: #f4fbff;
-    color: #315d78;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
     font-weight: 600;
 }
 
@@ -439,28 +535,32 @@
 
 @media (max-width: 1100px) {
     .dashboard {
-        grid-template-rows: auto auto auto;
+        grid-template-columns: minmax(0, 1fr);
         overflow-y: auto;
     }
 
-    .dashboard-bottom-grid {
-        grid-template-columns: minmax(0, 1fr);
+    .dashboard-main {
+        grid-template-rows: auto auto;
+    }
+
+    .dashboard-side {
+        grid-template-rows: auto auto;
     }
 
     .chart-card {
         min-height: 320px;
     }
-}
 
-/* Màn hình vừa: thu icon cảm biến và ẩn icon đèn để dành chỗ. */
-@media (max-width: 850px) {
-    .light-card:not(.is-alert) .light-icon {
-        display: none;
+    .threshold-fields {
+        justify-content: flex-start;
     }
 
+    .device-grid {
+        max-height: none;
+    }
 }
 
-/* Màn hình hẹp: xếp lại lưới thẻ và cho biểu đồ đủ chiều cao. */
+/* Màn hình hẹp: xếp cụm dữ liệu môi trường lại và cho biểu đồ đủ chiều cao. */
 @media (max-width: 700px) {
     .dashboard {
         padding: 14px 0 0;
@@ -468,29 +568,21 @@
         overflow-y: auto;
     }
 
-    .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .dashboard-light-grid {
-        grid-template-columns: 1fr;
-    }
+    .env-grid { gap: 10px; }
+    .env-card { padding-left: 12px; }
+    .env-light-card { padding: 16px 10px 12px; }
+    .env-card .sensor-card-label { font-size: 11px; }
+    .env-card .sensor-reading strong { font-size: 28px; }
 
     .chart-card {
         min-height: 320px;
     }
 }
 
-/* Màn hình rất hẹp: mỗi thẻ chiếm trọn một hàng. */
-@media (max-width: 420px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sensor-card,
-    .light-card {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
+@media (max-width: 380px) {
+    .env-grid { grid-template-columns: minmax(0, 1fr); }
+    .env-left { grid-template-columns: 1fr 1fr; grid-template-rows: auto; gap: 10px; }
+    .env-card { padding-right: 12px; }
+    .env-temperature-ruler, .env-humidity-detail { display: none; }
+    .env-light-card { min-height: 220px; }
 }

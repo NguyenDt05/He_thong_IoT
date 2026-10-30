@@ -5,10 +5,15 @@
     gap: 10px;
     min-height: 44px;
     padding: 0 14px;
-    background-color: #ffffff;
-    border: 1px solid #c5d9ff;
-    border-radius: 10px;
-    box-sizing: border-box; 
+    background-color: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    color: var(--ink-soft);
+    transition: border-color 0.2s;
+}
+
+.filter:hover {
+    border-color: #d5c8ea;
 }
 
 /* Màn hình hẹp: ô chọn giãn theo chiều rộng khung lọc. */

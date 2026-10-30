@@ -10,18 +10,38 @@
 }
 
 /* Phân cấp chữ: tiêu đề lớn, mô tả nhỏ và có màu nhẹ hơn. */
+.page-header.has-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: end;
+    column-gap: 16px;
+}
+
+.page-header.has-actions .page-title,
+.page-header.has-actions .page-description {
+    grid-column: 1;
+}
+
+.page-header-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+}
+
 .page-title {
     margin: 0;
-    font-size: 27px;
-    font-weight: bold;
-    line-height: 1.15;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    color: var(--ink);
 }
 
 .page-description {
     margin: 0;
     font-size: 13px;
-    line-height: 1.3;
-    color: #666666;
+    line-height: 1.4;
+    color: var(--muted);
 }
 
 /* Màn hình hẹp: giảm lề và cỡ chữ của tiêu đề, mô tả. */

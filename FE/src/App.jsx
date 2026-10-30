@@ -6,6 +6,7 @@ import Profile from "./pages/Profile/Profile";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import AuthProvider from "./AuthProvider";
 import AuthPage from "./pages/Auth/AuthPage";
+import PromoModal from "./components/PromoModal";
 
 // Bảng ánh xạ URL
 const pages = {
@@ -32,6 +33,7 @@ function App() {
     <Router>
       <AuthProvider>
         <AppPages />
+        <PromoModal />
       </AuthProvider>
     </Router>
   );

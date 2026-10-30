@@ -10,6 +10,7 @@ import TblHistory from "../../components/data/TblHistory";
 import Footer from "../../components/Footer";
 import "./History.css";
 import "../../styles/Toolbar.css";
+import "../../styles/DataTable.css";
 
 const DEFAULT_PAGE_SIZE = 20;
 const HISTORY_REFRESH_MS = 3000;

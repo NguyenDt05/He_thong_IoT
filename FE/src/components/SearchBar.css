@@ -1,6 +1,6 @@
 /* Vùng chứa giúp ô tìm kiếm giãn vừa chiều rộng được cấp bởi toolbar. */
 .searchbar {
-    width: 100%; 
+    width: 100%;
     display: flex;
     align-items: center;
 }
@@ -11,14 +11,21 @@
     min-width: 0;
     height: 44px;
     padding: 0 16px;
-    border: 1px solid #c5d9ff;
-    border-radius: 10px;
-    background-color: #ffffff;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input::placeholder {
+    color: var(--muted);
 }
 
 /* Trạng thái focus cho thấy ô nhập đang nhận bàn phím. */
 .search-input:focus {
-    border-color: none;
+    border-color: var(--accent);
     outline: none;
-    outline-offset: 1px;
+    box-shadow: 0 0 0 3px #efe9fd;
 }

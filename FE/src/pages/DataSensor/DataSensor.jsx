@@ -9,6 +9,7 @@ import DropdownSelect from "../../components/DropdownSelect";
 import Footer from "../../components/Footer";
 import "./DataSensor.css";
 import "../../styles/Toolbar.css";
+import "../../styles/DataTable.css";
 
 // Thiết lập số dòng mỗi trang và thời gian chờ phản hồi API.
 const DEFAULT_PAGE_SIZE = 20;

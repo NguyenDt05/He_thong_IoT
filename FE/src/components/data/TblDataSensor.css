@@ -5,8 +5,9 @@
     flex-direction: column;
     width: 100%;
     min-height: 0;
-    font-size: 14px;
-    background-color: #ffffff;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background-color: var(--surface);
 }
 
 /* Màn hình hẹp: giữ bảng đủ rộng để đọc và cuộn ngang ở khung ngoài. */
@@ -32,7 +33,7 @@
 .sensor-table thead {
     flex-shrink: 0;
     overflow-y: hidden;
-    background-color: #d8eef6;
+    background-color: var(--surface-soft);
 }
 
 .sensor-table tbody {
@@ -49,21 +50,23 @@
 
 /* Ô tiêu đề và ô dữ liệu dùng cùng đệm và đường kẻ phân hàng. */
 .sensor-table th {
-    font-weight: 600;
     padding: 14px 16px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
     text-align: left;
-    border-bottom: 1px solid #aedce8;
+    border-bottom: 1px solid var(--line);
 }
 
 .sensor-table td {
     padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid #aedce8;
+    border-bottom: 1px solid var(--line);
 }
 
 /* Phản hồi hover trên dòng dữ liệu và cho dòng rỗng trải đủ chiều rộng. */
 .sensor-table tbody tr:hover {
-    background-color: #eef5ff;
+    background-color: var(--surface-muted);
 }
 
 .sensor-table .empty-row {

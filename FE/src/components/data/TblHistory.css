@@ -5,8 +5,9 @@
     flex-direction: column;
     width: 100%;
     min-height: 0;
-    font-size: 14px;
-    background-color: #fff;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background-color: var(--surface);
 }
 
 /* Màn hình hẹp: giữ đủ độ rộng cho bảy cột và cuộn ngang ở khung ngoài. */
@@ -32,7 +33,7 @@
 .history-table thead {
     flex-shrink: 0;
     overflow-y: hidden;
-    background-color: #d8eef6;
+    background-color: var(--surface-soft);
 }
 
 /* Vùng chứa các dòng dữ liệu; cuộn dọc khi nội dung vượt chiều cao khả dụng. */
@@ -53,11 +54,13 @@
 .history-table td {
     padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid #aedce8;
+    border-bottom: 1px solid var(--line);
 }
 
 /* Nhấn mạnh chữ trong các ô tiêu đề. */
 .history-table th {
+    color: var(--muted);
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -68,34 +71,35 @@
 
 .history-table .status-badge {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 4px 9px;
     border: 1px solid transparent;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 500;
 }
 
 /* Màu nhãn theo kết quả: thành công, đang chờ hoặc thất bại. */
 .history-table .status-badge-success {
-    color: #15803d;
-    background-color: #f0fdf4;
-    border-color: #86efac;
+    color: var(--success);
+    background-color: #edf7f2;
+    border-color: #cfe9df;
 }
 
 .history-table .status-badge-pending {
     color: #a16207;
     background-color: #fefce8;
-    border-color: #fde047;
+    border-color: #f6e7a8;
 }
 
 .history-table .status-badge-failed {
-    color: #b91c1c;
-    background-color: #fef2f2;
-    border-color: #fca5a5;
+    color: var(--danger);
+    background-color: #fff0f4;
+    border-color: #f6cdd8;
 }
 
 /* Làm nổi bật dòng dữ liệu khi rê chuột. */
 .history-table tbody tr:hover {
-    background-color: #eef5ff;
+    background-color: var(--surface-muted);
 }
 
 /* Dòng thông báo rỗng trải toàn bộ chiều rộng bảy cột. */
