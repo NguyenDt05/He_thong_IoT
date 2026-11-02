@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const db = require("../src/db");
-const { ALERT_THRESHOLDS, advanceAlertCounter } = require("../src/service/alertThresholds");
+const { DEFAULT_ALERT_THRESHOLDS, SENSOR_TYPES, advanceAlertCounter } = require("../src/service/alertThresholds");
 
 async function migrate() {
     await db.query(`CREATE TABLE IF NOT EXISTS sensor_alert_counters (
@@ -10,10 +10,24 @@ async function migrate() {
         daily_count INT UNSIGNED NOT NULL DEFAULT 0,
         is_above TINYINT(1) NOT NULL DEFAULT 0
     )`);
+    await db.query(`CREATE TABLE IF NOT EXISTS sensor_alert_thresholds (
+        sensor_type VARCHAR(20) NOT NULL PRIMARY KEY,
+        threshold DECIMAL(8, 2) NOT NULL
+    )`);
 
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
+        for (const type of SENSOR_TYPES) {
+            await connection.execute(
+                "INSERT IGNORE INTO sensor_alert_thresholds (sensor_type, threshold) VALUES (?, ?)",
+                [type, DEFAULT_ALERT_THRESHOLDS[type]],
+            );
+        }
+        const [thresholdRows] = await connection.execute(
+            "SELECT sensor_type AS sensorType, threshold FROM sensor_alert_thresholds",
+        );
+        const thresholds = Object.fromEntries(thresholdRows.map((row) => [row.sensorType, Number(row.threshold)]));
         const [[{ today }]] = await connection.query(
             "SELECT DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00')) AS today",
         );
@@ -25,7 +39,7 @@ async function migrate() {
 
         for (const sensor of sensors) {
             if (initialized.has(sensor.sensorId)) continue;
-            const threshold = ALERT_THRESHOLDS[sensor.sensorType];
+            const threshold = thresholds[sensor.sensorType];
             const [[previous]] = await connection.execute(
                 `SELECT value FROM data_sensor WHERE sensor_id = ? AND created_at < ?
                  ORDER BY created_at DESC, data_id DESC LIMIT 1`,

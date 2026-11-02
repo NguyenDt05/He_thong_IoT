@@ -1,9 +1,69 @@
 const db = require("../db");
-const { ALERT_THRESHOLDS, advanceAlertCounter } = require("../service/alertThresholds");
+const { SENSOR_TYPES, validateThresholds, advanceAlertCounter } = require("../service/alertThresholds");
+
+async function getThresholds() {
+    const [rows] = await db.execute(
+        "SELECT sensor_type AS sensorType, threshold FROM sensor_alert_thresholds",
+    );
+    const thresholds = Object.fromEntries(rows.map((row) => [row.sensorType, Number(row.threshold)]));
+    if (!SENSOR_TYPES.every((type) => Number.isFinite(thresholds[type]))) {
+        throw new Error("Chưa khởi tạo đủ ngưỡng cảnh báo; chạy db:migrate:alerts");
+    }
+    return Object.fromEntries(SENSOR_TYPES.map((type) => [type, thresholds[type]]));
+}
+
+async function updateThresholds(input) {
+    const thresholds = validateThresholds(input);
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        // Cùng thứ tự khóa với các lần ghi số đo để không đổi ngưỡng giữa transaction.
+        for (const type of SENSOR_TYPES) {
+            const [[setting]] = await connection.execute(
+                "SELECT threshold FROM sensor_alert_thresholds WHERE sensor_type = ? FOR UPDATE",
+                [type],
+            );
+            if (!setting) {
+                throw new Error("Chưa khởi tạo đủ ngưỡng cảnh báo; chạy db:migrate:alerts");
+            }
+            await connection.execute(
+                "UPDATE sensor_alert_thresholds SET threshold = ? WHERE sensor_type = ?",
+                [thresholds[type], type],
+            );
+        }
+        const [sensors] = await connection.execute(
+            "SELECT sensor_id AS sensorId, sensor_type AS sensorType FROM sensors WHERE sensor_type IN ('TEMPERATURE', 'HUMIDITY', 'LIGHT')",
+        );
+        for (const sensor of sensors) {
+            const [[latest]] = await connection.execute(
+                "SELECT value FROM data_sensor WHERE sensor_id = ? ORDER BY created_at DESC, data_id DESC LIMIT 1",
+                [sensor.sensorId],
+            );
+            // Giữ số lần đã đếm; đồng bộ trạng thái vượt ngưỡng để mẫu kế tiếp
+            // không tạo ra một lần cảnh báo giả chỉ vì người dùng vừa đổi ngưỡng.
+            await connection.execute(
+                "UPDATE sensor_alert_counters SET is_above = ? WHERE sensor_id = ?",
+                [latest && Number(latest.value) > thresholds[sensor.sensorType] ? 1 : 0, sensor.sensorId],
+            );
+        }
+        await connection.commit();
+        return thresholds;
+    } catch (error) {
+        try { await connection.rollback(); } catch { /* Giao dịch đã hoàn tất. */ }
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
 
 async function recordReading(connection, sensorId, sensorType, value, day) {
-    const threshold = ALERT_THRESHOLDS[sensorType];
-    if (threshold === undefined) return;
+    if (!SENSOR_TYPES.includes(sensorType)) return;
+    const [[setting]] = await connection.execute(
+        "SELECT threshold FROM sensor_alert_thresholds WHERE sensor_type = ? FOR UPDATE",
+        [sensorType],
+    );
+    if (!setting) throw new Error(`Chưa có ngưỡng cảnh báo cho ${sensorType}`);
+    const threshold = Number(setting.threshold);
 
     await connection.execute(
         `INSERT IGNORE INTO sensor_alert_counters (sensor_id, alert_date, daily_count, is_above)
@@ -34,4 +94,4 @@ async function dailyAlertCounts() {
     return Object.fromEntries(rows.map((row) => [row.sensorType, Number(row.count)]));
 }
 
-module.exports = { recordReading, dailyAlertCounts };
+module.exports = { getThresholds, updateThresholds, recordReading, dailyAlertCounts };

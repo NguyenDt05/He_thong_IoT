@@ -1,9 +1,11 @@
 const mqtt = require("mqtt");
 const hardware = require("../repos/hardwareRP");
+const alerts = require("../repos/alertRP");
 
 const SENSOR_TOPIC = "sensor/data";
 const CONTROL_TOPIC = "device/control";
 const STATUS_TOPIC = "device/status";
+const THRESHOLD_TOPIC = "sensor/thresholds";
 const DEVICE_IDS = new Set((process.env.MQTT_DEVICE_IDS || "1,2,3").split(",")
     .map((id) => Number(id.trim())).filter((id) => Number.isSafeInteger(id) && id > 0));
 
@@ -58,6 +60,23 @@ function controlMessage(command) {
     return JSON.stringify({ actionId: command.id, deviceId: command.deviceId, command: command.action });
 }
 
+async function publishThresholds(thresholds) {
+    if (!client?.connected) return false;
+    const payload = JSON.stringify({
+        temperature: thresholds.TEMPERATURE,
+        humidity: thresholds.HUMIDITY,
+        light: thresholds.LIGHT,
+    });
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 3000);
+        client.publish(THRESHOLD_TOPIC, payload, { qos: 1, retain: true }, (error) => {
+            clearTimeout(timeout);
+            if (error) console.error("Không thể gửi sensor/thresholds:", error.message);
+            resolve(!error);
+        });
+    });
+}
+
 function startMqttBridge() {
     if (!process.env.MQTT_URL) {
         console.warn("MQTT_URL chưa được cấu hình; mạch chưa thể gửi dữ liệu vào backend.");
@@ -77,6 +96,9 @@ function startMqttBridge() {
         client.subscribe([SENSOR_TOPIC, STATUS_TOPIC], { qos: 0 }, (error) => {
             if (error) console.error("Không thể đăng ký topic MQTT:", error.message);
         });
+        alerts.getThresholds().then(publishThresholds).then((published) => {
+            if (!published) console.error("Chưa thể đồng bộ ngưỡng lên MQTT");
+        }).catch((error) => console.error("Không thể tải ngưỡng cho MQTT:", error.message));
     });
     client.on("error", (error) => console.error("Lỗi MQTT:", error.message));
     client.on("close", () => { lastSensorMessageAt = 0; });
@@ -127,4 +149,5 @@ function startMqttBridge() {
     return client;
 }
 
-module.exports = { startMqttBridge, isSensorStreamLive, isControllableDeviceId, parseSensorMessage, parseDeviceStatus, controlMessage };
+module.exports = { startMqttBridge, publishThresholds, isSensorStreamLive, isControllableDeviceId,
+    parseSensorMessage, parseDeviceStatus, controlMessage };

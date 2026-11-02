@@ -14,7 +14,7 @@ Backend tự kết nối lại broker khi mất mạng. Cần chạy **một** t
 
 Chạy `npm run db:migrate:auth` một lần trước khi dùng tài khoản. Lệnh thêm các cột nullable vào `users` (`username`, `password_hash`, `avatar_file`, mã sinh viên, số điện thoại và bốn URL) cùng bảng `auth_sessions`; có thể chạy lại mà không xóa người dùng cũ. Tài khoản cũ chưa có `username` sẽ không đăng nhập được cho đến khi được bổ sung tên đăng nhập.
 
-Trước khi bật bộ đếm cảnh báo mới, dừng backend và chạy `npm run db:migrate:alerts` trong thư mục `BE`, rồi khởi động lại backend. Lệnh tạo bảng `sensor_alert_counters` và khởi tạo số lần vượt ngưỡng hôm nay từ dữ liệu cảm biến đã có; có thể chạy lại mà không đặt lại bộ đếm. Sau đó, mỗi gói `sensor/data` cập nhật bộ đếm cùng transaction lưu số đo.
+Trước khi bật bộ đếm cảnh báo mới, dừng backend và chạy `npm run db:migrate:alerts` trong thư mục `BE`, rồi khởi động lại backend. Lệnh tạo bảng `sensor_alert_counters`, bảng `sensor_alert_thresholds` và khởi tạo số lần vượt ngưỡng hôm nay từ dữ liệu cảm biến đã có; có thể chạy lại mà không đặt lại bộ đếm hoặc ngưỡng đã sửa. Sau đó, mỗi gói `sensor/data` cập nhật bộ đếm cùng transaction lưu số đo. Ngưỡng mặc định ban đầu là 35°C, 80% và 80%; Dashboard có thể thay đổi chúng qua API mà không cần sửa mã hoặc khởi động lại. Backend gửi ngưỡng tới ESP32 qua topic MQTT giữ lại `sensor/thresholds` khi kết nối hoặc khi ngưỡng đổi.
 
 | Topic từ firmware | Dữ liệu | Xử lý backend |
 | --- | --- | --- |
@@ -35,7 +35,8 @@ Với lệnh terminal điều khiển một LED, backend ghi một dòng `SUCCES
 ## API giao diện
 
 - `GET /api/hardware/status` trả `connected`, lần đo cuối của từng loại cảm biến và ngưỡng quá hạn. `connected` chỉ đúng khi cầu nối MQTT vừa nhận và lưu số đo cùng cả ba loại có bản ghi mới. Đây là trạng thái dựa trên dữ liệu, không phải cảm biến phát hiện cắm/rút vật lý.
-- `GET /api/hardware/alerts` đọc số lần bắt đầu vượt ngưỡng hôm nay theo giờ Việt Nam từ `sensor_alert_counters`. Ngưỡng mặc định: nhiệt độ `> 35°C`, độ ẩm `> 80%`, ánh sáng `> 80%`. Mỗi đợt vượt ngưỡng chỉ cộng một lần; nếu kéo qua nửa đêm, ngày mới không cộng lại. Bảng giữ trạng thái vượt ngưỡng và số đếm của ngày hiện tại qua lần khởi động lại backend; khi sang ngày mới, số đếm tự trở về 0 ở mẫu đo đầu tiên. API trả 0 cho ngày mới trước khi có mẫu đo.
+- `GET /api/hardware/alerts` đọc ngưỡng đang lưu và số lần bắt đầu vượt ngưỡng hôm nay theo giờ Việt Nam từ `sensor_alert_counters`. Mỗi đợt vượt ngưỡng chỉ cộng một lần; nếu kéo qua nửa đêm, ngày mới không cộng lại. Bảng giữ trạng thái vượt ngưỡng và số đếm của ngày hiện tại qua lần khởi động lại backend; khi sang ngày mới, số đếm tự trở về 0 ở mẫu đo đầu tiên. API trả 0 cho ngày mới trước khi có mẫu đo.
+- `PUT /api/hardware/alerts/thresholds` nhận `{ "thresholds": { "TEMPERATURE": 35, "HUMIDITY": 80, "LIGHT": 80 } }`. Cần đủ ba số với tối đa hai chữ số thập phân; nhiệt độ từ -40 đến 125°C, độ ẩm và ánh sáng từ 0 đến 100%. API lưu vào MySQL, giữ nguyên số lần đã đếm và đồng bộ trạng thái vượt ngưỡng theo mẫu mới nhất. Response gồm `thresholds` và `brokerUpdated`; nếu MQTT tạm ngắt, backend sẽ gửi lại khi kết nối.
 - `GET /api/data-sensor?page=1&limit=20&criterion=all&key=` trả số đo từ `data_sensor` nối với `sensors`, mới nhất trước. `criterion` nhận `all`, `temperature`, `humidity`, `light`, `datetime`; với một loại cảm biến, `key` được tìm trong giá trị đo.
 - `GET /api/devices` đọc thiết bị từ MySQL, gồm `status` thật và `pendingActionId` nếu có lệnh đang chờ còn hiệu lực.
 - `POST /api/history` với `{ "deviceId": 1, "action": "ON" }` hoặc `OFF` xếp lệnh `PENDING`, trả `201`. Nếu thiết bị đã có lệnh đang chờ, trả `409`; nếu firmware chưa hỗ trợ `deviceId`, trả `422`; khi mạch không gửi số đo mới, trả `503`.

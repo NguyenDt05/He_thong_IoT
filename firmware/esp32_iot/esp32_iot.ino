@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
+#include <Preferences.h>
 #include "secrets.h"
 
 #define DHT_PIN 13
@@ -14,15 +15,18 @@
 const char* CONTROL_TOPIC = "device/control";
 const char* STATUS_TOPIC = "device/status";
 const char* SENSOR_TOPIC = "sensor/data";
+const char* THRESHOLD_TOPIC = "sensor/thresholds";
 
 const unsigned long SENSOR_INTERVAL_MS = 2000;
 const unsigned long STATUS_INTERVAL_MS = 5000;
 const unsigned long WIFI_RETRY_INTERVAL_MS = 10000;
 const unsigned long MQTT_RETRY_INTERVAL_MS = 5000;
 const unsigned long ALERT_BLINK_INTERVAL_MS = 500;
-const float TEMPERATURE_ALERT_THRESHOLD = 35.0;
-const float HUMIDITY_ALERT_THRESHOLD = 80.0;
-const float LIGHT_ALERT_THRESHOLD = 80.0;
+// Giá trị dự phòng trước lần đồng bộ đầu tiên; MQTT và NVS giữ ngưỡng đã lưu.
+float alertThresholds[3] = { 35.0, 80.0, 80.0 };
+const char* thresholdKeys[3] = { "temp", "humidity", "light" };
+Preferences thresholdPreferences;
+bool thresholdStorageReady = false;
 
 DHT dht(DHT_PIN, DHT_TYPE);
 WiFiClient wifiClient;
@@ -58,9 +62,9 @@ void applyLedOutputs() {
 
 void updateAlerts(float temperature, float humidity, float light) {
   const bool nextAlerts[3] = {
-    !isnan(temperature) && temperature > TEMPERATURE_ALERT_THRESHOLD,
-    !isnan(humidity) && humidity > HUMIDITY_ALERT_THRESHOLD,
-    light > LIGHT_ALERT_THRESHOLD,
+    !isnan(temperature) && temperature > alertThresholds[0],
+    !isnan(humidity) && humidity > alertThresholds[1],
+    light > alertThresholds[2],
   };
   for (int i = 0; i < 3; i++) {
     if (nextAlerts[i] && !alertActive[i]) {
@@ -98,6 +102,38 @@ void publishAllDeviceStatuses() {
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  if (String(topic) == THRESHOLD_TOPIC) {
+    JsonDocument settings;
+    if (deserializeJson(settings, payload, length)) {
+      Serial.println("Invalid sensor/thresholds JSON");
+      return;
+    }
+    if (!settings["temperature"].is<float>()
+        || !settings["humidity"].is<float>()
+        || !settings["light"].is<float>()) {
+      Serial.println("Invalid sensor/thresholds values");
+      return;
+    }
+    const float next[3] = {
+      settings["temperature"].as<float>(),
+      settings["humidity"].as<float>(),
+      settings["light"].as<float>(),
+    };
+    if (!isfinite(next[0]) || next[0] < -40 || next[0] > 125
+        || !isfinite(next[1]) || next[1] < 0 || next[1] > 100
+        || !isfinite(next[2]) || next[2] < 0 || next[2] > 100) {
+      Serial.println("Out-of-range sensor/thresholds values");
+      return;
+    }
+    for (int i = 0; i < 3; i++) {
+      if (fabsf(alertThresholds[i] - next[i]) < 0.001f) continue;
+      alertThresholds[i] = next[i];
+      if (thresholdStorageReady) thresholdPreferences.putFloat(thresholdKeys[i], next[i]);
+    }
+    Serial.printf("Thresholds updated: %.2f, %.2f, %.2f\n",
+      alertThresholds[0], alertThresholds[1], alertThresholds[2]);
+    return;
+  }
   if (String(topic) != CONTROL_TOPIC) return;
 
   JsonDocument commandDoc;
@@ -147,6 +183,16 @@ void setup() {
   digitalWrite(LED2_PIN, LOW);
   digitalWrite(LED3_PIN, LOW);
 
+  thresholdStorageReady = thresholdPreferences.begin("alerts", false);
+  if (thresholdStorageReady) {
+    for (int i = 0; i < 3; i++) {
+      const float stored = thresholdPreferences.getFloat(thresholdKeys[i], alertThresholds[i]);
+      const float minValue = i == 0 ? -40.0f : 0.0f;
+      const float maxValue = i == 0 ? 125.0f : 100.0f;
+      if (isfinite(stored) && stored >= minValue && stored <= maxValue) alertThresholds[i] = stored;
+    }
+  }
+
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -184,6 +230,9 @@ void loop() {
       Serial.println("MQTT connected");
       if (!mqttClient.subscribe(CONTROL_TOPIC)) {
         Serial.println("Failed to subscribe to device/control");
+      }
+      if (!mqttClient.subscribe(THRESHOLD_TOPIC)) {
+        Serial.println("Failed to subscribe to sensor/thresholds");
       }
       // Restore the backend's view after a board or MQTT reconnection.
       publishAllDeviceStatuses();

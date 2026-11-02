@@ -7,7 +7,7 @@ import { layDuLieuCB_sv } from "../../services/dataSensorSV";
 import { layThietBi_sv } from "../../services/deviceSV";
 import { ghiLichSu_sv } from "../../services/historySV";
 import { layTrangThaiMach_sv } from "../../services/hardwareSV";
-import { layCanhBao_sv } from "../../services/alertSV";
+import { layCanhBao_sv, luuNguongCanhBao_sv } from "../../services/alertSV";
 import { dinhdang } from "../../utils/formatDate";
 import { formatSensorValue } from "../../utils/formatSensorValue";
 import Thermometer from "../../components/Thermometer";
@@ -273,6 +273,9 @@ function Dashboard() {
   const [canhBao, setCanhBao] = useState(null);
   const [dangChinhSuaNguong, setDangChinhSuaNguong] = useState(false);
   const [nguongNhap, setNguongNhap] = useState({});
+  const [dangLuuNguong, setDangLuuNguong] = useState(false);
+  const [loiNguong, setLoiNguong] = useState("");
+  const [thongBaoNguong, setThongBaoNguong] = useState("");
   const mocThoiGianDuLieu = Object.values(duLieuCB).map((dong) => Date.parse(dong.createdAt));
   const thoiGianDuLieu = mocThoiGianDuLieu.length > 0 ? Math.max(...mocThoiGianDuLieu) : null;
 
@@ -483,6 +486,29 @@ function Dashboard() {
     }
   }
 
+  async function luuNguong(event) {
+    event.preventDefault();
+    if (dangLuuNguong) return;
+    setDangLuuNguong(true);
+    setLoiNguong("");
+    setThongBaoNguong("");
+    try {
+      const thresholds = Object.fromEntries(DS_CAM_BIEN.map((cb) =>
+        [cb.type, Number(nguongNhap[cb.type])]));
+      const result = await luuNguongCanhBao_sv(thresholds);
+      setCanhBao((current) => ({ ...current, thresholds: result.thresholds }));
+      if (result.brokerUpdated) {
+        setDangChinhSuaNguong(false);
+      } else {
+        setThongBaoNguong("Đã lưu. Mạch sẽ nhận ngưỡng khi MQTT kết nối lại.");
+      }
+    } catch (error) {
+      setLoiNguong(error.message || "Không thể lưu ngưỡng cảnh báo");
+    } finally {
+      setDangLuuNguong(false);
+    }
+  }
+
   // Giao diện
   return (
     <MainLayout title="Dashboard" description="Tổng quan dữ liệu cảm biến và trạng thái thiết bị">
@@ -490,9 +516,59 @@ function Dashboard() {
         {/* Ba ô nhiệt độ, độ ẩm, ánh sáng. */}
         <section className="dashboard-section">
           <div className="dashboard-sensor-header">
-            <span>{thoiGianDuLieu === null ? "Chưa có dữ liệu" : `Cập nhật: ${dinhdang(thoiGianDuLieu)}`}</span>
-            {trangThaiMach !== "connected" && trangThaiMach !== "loading" && (
-              <span className="dashboard-hardware-error" role="alert">Lỗi kết nối phần cứng</span>
+            <button className="threshold-edit-button" type="button"
+              aria-label={dangChinhSuaNguong ? "Đóng chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}
+              aria-expanded={dangChinhSuaNguong}
+              aria-controls="threshold-editor"
+              disabled={dangLuuNguong || (!dangChinhSuaNguong && !canhBao?.thresholds)}
+              onClick={() => {
+                if (dangChinhSuaNguong) {
+                  setDangChinhSuaNguong(false);
+                } else {
+                  setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
+                    [cb.type, String(canhBao.thresholds[cb.type] ?? "")])));
+                  setLoiNguong("");
+                  setThongBaoNguong("");
+                  setDangChinhSuaNguong(true);
+                }
+              }}>
+              {dangChinhSuaNguong ? <X size={18} aria-hidden="true" /> : <Pencil size={18} aria-hidden="true" />}
+              <span>{dangChinhSuaNguong ? "Đóng chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}</span>
+            </button>
+            <div className="dashboard-sensor-status">
+              {trangThaiMach !== "connected" && trangThaiMach !== "loading" && (
+                <span className="dashboard-hardware-error" role="alert">Lỗi kết nối phần cứng</span>
+              )}
+              <span>{thoiGianDuLieu === null ? "Chưa có dữ liệu" : `Đồng bộ lần cuối: ${dinhdang(thoiGianDuLieu)}`}</span>
+            </div>
+            {dangChinhSuaNguong && (
+              <form id="threshold-editor" className="threshold-editor" aria-label="Chỉnh sửa ngưỡng cảnh báo"
+                onSubmit={luuNguong}>
+                {DS_CAM_BIEN.map((cb) => (
+                  <label className="threshold-editor-field" key={cb.type} htmlFor={`threshold-${cb.type}`}>
+                    <span>{cb.title}</span>
+                    <span className="threshold-input-wrap">
+                      <input id={`threshold-${cb.type}`} type="number" step="0.01" required
+                        min={cb.type === "TEMPERATURE" ? -40 : 0}
+                        max={cb.type === "TEMPERATURE" ? 125 : 100}
+                        value={nguongNhap[cb.type] ?? ""}
+                        onChange={(event) => {
+                          setNguongNhap((current) => ({ ...current, [cb.type]: event.target.value }));
+                          setLoiNguong("");
+                          setThongBaoNguong("");
+                        }} />
+                      <span>{cb.unit}</span>
+                    </span>
+                  </label>
+                ))}
+                <div className="threshold-actions">
+                  <button type="submit" disabled={dangLuuNguong}>
+                    {dangLuuNguong ? "Đang lưu..." : "Lưu"}
+                  </button>
+                </div>
+                {loiNguong && <p className="threshold-feedback is-error" role="alert">{loiNguong}</p>}
+                {thongBaoNguong && <p className="threshold-feedback" role="status">{thongBaoNguong}</p>}
+              </form>
             )}
           </div>
           <div className="dashboard-grid">
@@ -509,22 +585,29 @@ function Dashboard() {
                 && Number(moiNhat.value) > canhBao?.thresholds?.[cb.type];
 
               return (
-                // Tên và chỉ số xếp dọc bên trái, biểu tượng căn giữa bên phải.
+                // Ngưỡng nằm cạnh tên; biểu tượng ở dưới hàng tiêu đề.
                 <article className={`dashboard-card sensor-card ${cb.tone}`} key={cb.type} style={sensorStyle}>
-                  <div className="sensor-card-info">
+                  <div className="sensor-card-heading">
                     <span className="sensor-card-label">{cb.title}</span>
-                    <div className="sensor-reading">
-                      <strong>{formatSensorValue(moiNhat?.value)}</strong>
-                      <span>{moiNhat?.unit || cb.unit}</span>
-                    </div>
-                    <span className={`sensor-alert-count${vuotNguong ? " is-alert" : ""}`}>
-                      {`Vượt ngưỡng hôm nay: ${canhBao?.counts?.[cb.type] ?? "—"} lần`}
+                    <span className="sensor-threshold">
+                      Ngưỡng cảnh báo: <strong>&gt; {canhBao?.thresholds?.[cb.type] ?? "—"} {cb.unit}</strong>
                     </span>
                   </div>
-                  <div className="sensor-card-icon">
-                    {cb.type === "TEMPERATURE" && <Thermometer temperature={temperature} scale={thangTemp} />}
-                    {cb.type === "HUMIDITY" && <HumidityIcon humidity={humidity} />}
-                    {cb.type === "LIGHT" && <LightIcon light={light} />}
+                  <div className="sensor-card-content">
+                    <div className="sensor-card-info">
+                      <div className="sensor-reading">
+                        <strong>{formatSensorValue(moiNhat?.value)}</strong>
+                        <span>{moiNhat?.unit || cb.unit}</span>
+                      </div>
+                      <span className={`sensor-alert-count${vuotNguong ? " is-alert" : ""}`}>
+                        {`Vượt ngưỡng hôm nay: ${canhBao?.counts?.[cb.type] ?? "—"} lần`}
+                      </span>
+                    </div>
+                    <div className="sensor-card-icon">
+                      {cb.type === "TEMPERATURE" && <Thermometer temperature={temperature} scale={thangTemp} />}
+                      {cb.type === "HUMIDITY" && <HumidityIcon humidity={humidity} />}
+                      {cb.type === "LIGHT" && <LightIcon light={light} />}
+                    </div>
                   </div>
                 </article>
               );
@@ -578,68 +661,15 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Biểu đồ và khung cài đặt ngưỡng dùng chung hàng cuối. */}
+        {/* Biểu đồ chiếm toàn bộ chiều ngang của hàng cuối. */}
         <section className="dashboard-section">
-          <div className="dashboard-bottom-grid">
-            <div className="dashboard-card chart-card">
-              <h2 className="chart-title">Biểu đồ dữ liệu</h2>
-              {duLieuBieuDo.length === 0
-                ? <div className="chart-empty" role="status">
-                    {trangThaiMach === "loading" ? "Đang tải dữ liệu..." : "Chưa có dữ liệu"}
-                  </div>
-                : <SensorChart rows={duLieuBieuDo} />}
-            </div>
-            <div className={`dashboard-card threshold-card${dangChinhSuaNguong ? " is-editing" : ""}`}>
-              <div className="threshold-heading">
-                <h2 className="chart-title">Thiết lập ngưỡng</h2>
-                <button className="threshold-edit-button" type="button"
-                  aria-label={dangChinhSuaNguong ? "Hủy chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}
-                  disabled={!dangChinhSuaNguong && !canhBao?.thresholds}
-                  onClick={() => {
-                    if (dangChinhSuaNguong) {
-                      setDangChinhSuaNguong(false);
-                    } else {
-                      setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
-                        [cb.type, String(canhBao.thresholds[cb.type] ?? "")])));
-                      setDangChinhSuaNguong(true);
-                    }
-                  }}>
-                  {dangChinhSuaNguong ? <X size={18} aria-hidden="true" /> : <Pencil size={18} aria-hidden="true" />}
-                </button>
-              </div>
-              <div className="threshold-fields">
-                {DS_CAM_BIEN.map((cb) => (
-                  <div className="threshold-field" key={cb.type}>
-                    {dangChinhSuaNguong ? (
-                      <>
-                        <label htmlFor={`threshold-${cb.type}`}>{cb.title}</label>
-                        <span className="threshold-input-wrap">
-                          <input id={`threshold-${cb.type}`} type="number" step="0.01"
-                            value={nguongNhap[cb.type] ?? ""}
-                            onChange={(event) => setNguongNhap((current) =>
-                              ({ ...current, [cb.type]: event.target.value }))} />
-                          <span>{cb.unit}</span>
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{cb.title}</span>
-                        <span className="threshold-value">
-                          <strong>{canhBao?.thresholds?.[cb.type] ?? "—"}</strong>
-                          <span>{cb.unit}</span>
-                        </span>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {dangChinhSuaNguong && (
-                <div className="threshold-actions">
-                  <button type="button" disabled>Lưu</button>
-                  <p>Chưa thể lưu ngưỡng ở phiên bản này.</p>
+          <div className="dashboard-card chart-card">
+            <h2 className="chart-title">Biểu đồ dữ liệu</h2>
+            {duLieuBieuDo.length === 0
+              ? <div className="chart-empty" role="status">
+                  {trangThaiMach === "loading" ? "Đang tải dữ liệu..." : "Chưa có dữ liệu"}
                 </div>
-              )}
-            </div>
+              : <SensorChart rows={duLieuBieuDo} />}
           </div>
         </section>
       </div>

@@ -16,12 +16,23 @@
 }
 
 .dashboard-sensor-header {
+    position: relative;
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
     margin: 0 0 8px;
     color: #64748b;
     font-size: 12px;
+}
+
+.dashboard-sensor-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    text-align: right;
 }
 
 .dashboard-hardware-error {
@@ -31,7 +42,7 @@
 /* Lưới thẻ chung; lưới đèn tự đổi số cột theo chỗ trống. */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 12px;
 }
 
@@ -49,10 +60,9 @@
 
 /* Thẻ cảm biến: tên và chỉ số bên trái, biểu tượng bên phải. */
 .sensor-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 64px;
-    align-items: center;
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     min-height: 112px;
     padding: 8px 14px;
     border-top: 3px solid var(--sensor-color);
@@ -63,7 +73,36 @@
 .humidity { --sensor-color: #328fc8; }
 .light { --sensor-color: #e0a62c; }
 
-/* Tên cảm biến nằm ngay trên giá trị. */
+/* Tên cảm biến và ngưỡng cùng hàng; chỉ số và icon ở hàng dưới. */
+.sensor-card-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+}
+
+.sensor-threshold {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.sensor-threshold strong {
+    color: #334155;
+    font-weight: 700;
+}
+
+.sensor-card-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 64px;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
 .sensor-card-info {
     display: flex;
     flex-direction: column;
@@ -78,6 +117,7 @@
     place-items: center;
     width: 64px;
     height: 64px;
+    transform: translateY(4px);
 }
 
 .light-icon {
@@ -253,15 +293,6 @@
     outline-offset: 3px;
 }
 
-/* Hàng cuối: biểu đồ chiếm hai phần, ngưỡng chiếm một phần. */
-.dashboard-bottom-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-    gap: 12px;
-    flex: 1;
-    min-height: 0;
-}
-
 /* Khung biểu đồ chung cho ba cảm biến. */
 .chart-card {
     display: flex;
@@ -294,37 +325,19 @@
     color: #64748b;
 }
 
-.threshold-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 0;
-    padding: 10px 14px;
-    overflow-y: auto;
-}
-
-.threshold-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.threshold-heading .chart-title {
-    margin-bottom: 0;
-}
-
 .threshold-edit-button {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
     flex-shrink: 0;
-    padding: 0;
+    padding: 0 4px;
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: #315d78;
+    color: inherit;
+    font: inherit;
+    white-space: nowrap;
     cursor: pointer;
 }
 
@@ -342,53 +355,36 @@
     outline-offset: 2px;
 }
 
-.threshold-fields {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    justify-content: space-evenly;
-    gap: 8px;
-}
-
-.threshold-field {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.threshold-editor {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 4px);
+    left: 0;
+    display: grid;
     gap: 12px;
-    min-height: 48px;
+    width: min(340px, calc(100vw - 48px));
+    padding: 14px;
+    border: 1px solid #d5e9ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 28px #213f5226;
     color: #475569;
-    font-size: 14px;
-    font-weight: 600;
+    text-align: left;
 }
 
-.threshold-card.is-editing .threshold-field {
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: 5px;
+.threshold-editor-field {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .threshold-input-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.threshold-value {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    color: #213f52;
-    white-space: nowrap;
-}
-
-.threshold-value strong {
-    font-size: 22px;
-}
-
-.threshold-value > span {
-    color: #64748b;
-    font-weight: 400;
 }
 
 .threshold-input-wrap input {
@@ -414,7 +410,9 @@
 }
 
 .threshold-actions {
-    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .threshold-actions button {
@@ -424,6 +422,11 @@
     background: #f4fbff;
     color: #315d78;
     font-weight: 600;
+    cursor: pointer;
+}
+
+.threshold-actions button:hover:not(:disabled) {
+    background: #e5f5fc;
 }
 
 .threshold-actions button:disabled {
@@ -431,20 +434,20 @@
     opacity: 0.55;
 }
 
-.threshold-actions p {
-    margin: 8px 0 0;
-    color: #64748b;
+.threshold-feedback {
+    margin: 0;
+    color: #315d78;
     font-size: 12px;
+}
+
+.threshold-feedback.is-error {
+    color: #dc2626;
 }
 
 @media (max-width: 1100px) {
     .dashboard {
         grid-template-rows: auto auto auto;
         overflow-y: auto;
-    }
-
-    .dashboard-bottom-grid {
-        grid-template-columns: minmax(0, 1fr);
     }
 
     .chart-card {
@@ -466,11 +469,6 @@
         padding: 14px 0 0;
         gap: 10px;
         overflow-y: auto;
-    }
-
-    .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
     }
 
     .dashboard-light-grid {

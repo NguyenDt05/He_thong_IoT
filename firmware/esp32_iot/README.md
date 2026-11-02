@@ -21,16 +21,20 @@ rows; periodic status reports do not create history. It also reports
 all three states after MQTT reconnection and every five seconds. The backend
 uses these messages to update `devices.status`; Dashboard polls `/api/devices`.
 
-Each sensor controls one alert LED: temperature > 35°C blinks LED 1, humidity
-> 80% blinks LED 2, and light > 80% blinks LED 3. The LED changes every 500 ms
+Each sensor controls one alert LED: temperature blinks LED 1, humidity blinks
+LED 2, and light blinks LED 3 when its configured threshold is exceeded.
+The LED changes every 500 ms
 while its sensor remains above the threshold. Manual ON/OFF commands set the
 steady state restored when the alert ends. During an alert, `device/status`
 reports that requested steady state rather than each blink phase, so the
 backend does not fill action history with blink transitions. The Dashboard
-fetches daily crossing counts from `/api/hardware/alerts`. If you change a
-threshold, update both the constants here in `esp32_iot.ino` and
-`BE/src/service/alertThresholds.js`, then rebuild the firmware and restart
-the backend.
+fetches daily crossing counts and editable thresholds from `/api/hardware/alerts`.
+The backend publishes the current thresholds to the retained MQTT topic
+`sensor/thresholds` as `{ "temperature": 35, "humidity": 80, "light": 80 }`
+on connection and after a Dashboard edit. The board subscribes on every MQTT
+connection and stores received values in ESP32 Preferences, so rebooting while
+offline keeps the last configuration. The original 35/80/80 values are only
+first-boot fallbacks. Flash this firmware once to enable live threshold updates.
 
 For a terminal command, omit `actionId` because it is reserved for commands
 created by the Dashboard. Example payload:

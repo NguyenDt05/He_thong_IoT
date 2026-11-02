@@ -27,3 +27,5 @@ Các lời gọi HTTP nằm trong `src/services/`. `apiConfig.js` chọn gốc A
 | Profile | `GET /api/auth/me` lấy hồ sơ khi đã đăng nhập; `PUT /api/auth/me` lưu thông tin cá nhân và bốn URL. `PUT /api/auth/avatar` tải ảnh lên, `GET /api/auth/avatar` hiển thị ảnh. Người chưa tải ảnh thấy chữ cái đầu tên. |
 
 Cấu hình cầu nối MQTT cho firmware ESP32 và cách bật LED 3 nằm trong [hướng dẫn backend](../BE/README.md). Backend dùng các topic và khóa JSON của mã Arduino hiện tại.
+
+Ngưỡng cảnh báo trên ba thẻ cảm biến được đọc từ backend. Nhấn “Chỉnh sửa ngưỡng” ở đầu Dashboard để nhập ba giá trị và lưu; thay đổi được ghi vào MySQL và gửi tới ESP32 qua MQTT. Nếu broker tạm ngắt, giá trị vẫn được lưu và sẽ gửi khi kết nối lại.
