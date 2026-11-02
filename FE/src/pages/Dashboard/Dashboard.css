@@ -356,20 +356,70 @@
 }
 
 .threshold-editor {
-    position: absolute;
-    z-index: 10;
-    top: calc(100% + 4px);
-    left: 0;
     display: grid;
-    gap: 12px;
-    width: min(340px, calc(100vw - 48px));
-    padding: 14px;
-    border: 1px solid #d5e9ef;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 12px 28px #213f5226;
+    gap: 16px;
+    padding: 24px;
     color: #475569;
     text-align: left;
+}
+
+.threshold-dialog {
+    width: min(440px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    margin: auto;
+    padding: 0;
+    border: 1px solid #d5e9ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 24px 64px #102d4080;
+    overflow-y: auto;
+    animation: threshold-dialog-enter 180ms ease-out;
+}
+
+.threshold-dialog::backdrop {
+    background: #102d4066;
+    backdrop-filter: blur(5px);
+}
+
+.threshold-dialog-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.threshold-dialog-heading h2 {
+    margin: 0;
+    color: #213f52;
+    font-size: 18px;
+}
+
+.threshold-dialog-close {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.threshold-dialog-close:hover:not(:disabled) {
+    background: #f4fbff;
+}
+
+.threshold-dialog-close:focus-visible {
+    outline: 2px solid #328fc8;
+    outline-offset: 2px;
+}
+
+@keyframes threshold-dialog-enter {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .threshold-editor-field {
@@ -412,21 +462,39 @@
 .threshold-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
 }
 
 .threshold-actions button {
-    padding: 9px 14px;
-    border: 1px solid #b5d2e2;
-    border-radius: 8px;
-    background: #f4fbff;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #c5d9ff;
+    border-radius: 10px;
+    background: #fff;
     color: #315d78;
+    font-size: 14px;
     font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
 }
 
 .threshold-actions button:hover:not(:disabled) {
-    background: #e5f5fc;
+    background: #edf7fc;
+}
+
+.threshold-actions button[type="submit"] {
+    background: #315d78;
+    color: #fff;
+}
+
+.threshold-actions button[type="submit"]:hover:not(:disabled) {
+    background: #24475e;
+}
+
+.threshold-actions button:focus-visible {
+    outline: 2px solid #23648a;
+    outline-offset: 2px;
 }
 
 .threshold-actions button:disabled {
@@ -442,6 +510,14 @@
 
 .threshold-feedback.is-error {
     color: #dc2626;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .threshold-dialog { animation: none; }
+}
+
+@media (max-width: 420px) {
+    .threshold-editor { padding: 18px; }
 }
 
 @media (max-width: 1100px) {

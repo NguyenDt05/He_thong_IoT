@@ -1,4 +1,5 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Pencil, X } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -30,6 +31,20 @@ const THOI_GIAN_KIEM_TRA_MACH = 1000;
 const THOI_GIAN_CAP_NHAT_CANH_BAO = 10000;
 const THOI_GIAN_CHO_TRANG_THAI_MACH = 3000;
 const LOAI_CAM_BIEN = DS_CAM_BIEN.map((cb) => cb.type);
+
+function docNguongNhap(raw, cb) {
+  const text = String(raw ?? "").trim().replace(",", ".");
+  if (!/^-?\d{1,8}(?:\.\d{1,2})?$/.test(text)) {
+    throw new Error(`${cb.title}: nhập số có tối đa 2 chữ số thập phân.`);
+  }
+  const value = Number(text);
+  const min = cb.type === "TEMPERATURE" ? -40 : 0;
+  const max = cb.type === "TEMPERATURE" ? 125 : 100;
+  if (value < min || value > max) {
+    throw new Error(`${cb.title}: giá trị phải nằm trong khoảng ${min}–${max} ${cb.unit}.`);
+  }
+  return value;
+}
 
 const thangTemp = { //thang màu nhiệt độ
   min: -10,
@@ -276,8 +291,17 @@ function Dashboard() {
   const [dangLuuNguong, setDangLuuNguong] = useState(false);
   const [loiNguong, setLoiNguong] = useState("");
   const [thongBaoNguong, setThongBaoNguong] = useState("");
+  const nguongDialogRef = useRef(null);
   const mocThoiGianDuLieu = Object.values(duLieuCB).map((dong) => Date.parse(dong.createdAt));
   const thoiGianDuLieu = mocThoiGianDuLieu.length > 0 ? Math.max(...mocThoiGianDuLieu) : null;
+
+  useEffect(() => {
+    if (!dangChinhSuaNguong) return;
+    const dialog = nguongDialogRef.current;
+    dialog.showModal();
+    dialog.querySelector("input")?.focus();
+    return () => { if (dialog.open) dialog.close(); };
+  }, [dangChinhSuaNguong]);
 
   useEffect(() => {
     luuObject(KEY_BIEU_DO, duLieuBieuDo);
@@ -494,7 +518,7 @@ function Dashboard() {
     setThongBaoNguong("");
     try {
       const thresholds = Object.fromEntries(DS_CAM_BIEN.map((cb) =>
-        [cb.type, Number(nguongNhap[cb.type])]));
+        [cb.type, docNguongNhap(nguongNhap[cb.type], cb)]));
       const result = await luuNguongCanhBao_sv(thresholds);
       setCanhBao((current) => ({ ...current, thresholds: result.thresholds }));
       if (result.brokerUpdated) {
@@ -517,23 +541,19 @@ function Dashboard() {
         <section className="dashboard-section">
           <div className="dashboard-sensor-header">
             <button className="threshold-edit-button" type="button"
-              aria-label={dangChinhSuaNguong ? "Đóng chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}
-              aria-expanded={dangChinhSuaNguong}
-              aria-controls="threshold-editor"
-              disabled={dangLuuNguong || (!dangChinhSuaNguong && !canhBao?.thresholds)}
+              aria-haspopup="dialog"
+              aria-controls="threshold-dialog"
+              disabled={!canhBao?.thresholds}
               onClick={() => {
-                if (dangChinhSuaNguong) {
-                  setDangChinhSuaNguong(false);
-                } else {
-                  setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
-                    [cb.type, String(canhBao.thresholds[cb.type] ?? "")])));
-                  setLoiNguong("");
-                  setThongBaoNguong("");
-                  setDangChinhSuaNguong(true);
-                }
+                setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
+                  [cb.type, canhBao.thresholds[cb.type] == null
+                    ? "" : Number(canhBao.thresholds[cb.type]).toFixed(2)])));
+                setLoiNguong("");
+                setThongBaoNguong("");
+                setDangChinhSuaNguong(true);
               }}>
-              {dangChinhSuaNguong ? <X size={18} aria-hidden="true" /> : <Pencil size={18} aria-hidden="true" />}
-              <span>{dangChinhSuaNguong ? "Đóng chỉnh sửa ngưỡng" : "Chỉnh sửa ngưỡng"}</span>
+              <Pencil size={18} aria-hidden="true" />
+              <span>Chỉnh sửa ngưỡng</span>
             </button>
             <div className="dashboard-sensor-status">
               {trangThaiMach !== "connected" && trangThaiMach !== "loading" && (
@@ -541,35 +561,6 @@ function Dashboard() {
               )}
               <span>{thoiGianDuLieu === null ? "Chưa có dữ liệu" : `Đồng bộ lần cuối: ${dinhdang(thoiGianDuLieu)}`}</span>
             </div>
-            {dangChinhSuaNguong && (
-              <form id="threshold-editor" className="threshold-editor" aria-label="Chỉnh sửa ngưỡng cảnh báo"
-                onSubmit={luuNguong}>
-                {DS_CAM_BIEN.map((cb) => (
-                  <label className="threshold-editor-field" key={cb.type} htmlFor={`threshold-${cb.type}`}>
-                    <span>{cb.title}</span>
-                    <span className="threshold-input-wrap">
-                      <input id={`threshold-${cb.type}`} type="number" step="0.01" required
-                        min={cb.type === "TEMPERATURE" ? -40 : 0}
-                        max={cb.type === "TEMPERATURE" ? 125 : 100}
-                        value={nguongNhap[cb.type] ?? ""}
-                        onChange={(event) => {
-                          setNguongNhap((current) => ({ ...current, [cb.type]: event.target.value }));
-                          setLoiNguong("");
-                          setThongBaoNguong("");
-                        }} />
-                      <span>{cb.unit}</span>
-                    </span>
-                  </label>
-                ))}
-                <div className="threshold-actions">
-                  <button type="submit" disabled={dangLuuNguong}>
-                    {dangLuuNguong ? "Đang lưu..." : "Lưu"}
-                  </button>
-                </div>
-                {loiNguong && <p className="threshold-feedback is-error" role="alert">{loiNguong}</p>}
-                {thongBaoNguong && <p className="threshold-feedback" role="status">{thongBaoNguong}</p>}
-              </form>
-            )}
           </div>
           <div className="dashboard-grid">
             {DS_CAM_BIEN.map((cb) => {
@@ -673,6 +664,56 @@ function Dashboard() {
           </div>
         </section>
       </div>
+      {dangChinhSuaNguong && createPortal(
+        <dialog id="threshold-dialog" ref={nguongDialogRef} className="threshold-dialog"
+          aria-labelledby="threshold-dialog-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            if (!dangLuuNguong) setDangChinhSuaNguong(false);
+          }}
+          onClick={(event) => {
+            if (dangLuuNguong || event.target !== event.currentTarget) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right
+              || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+              setDangChinhSuaNguong(false);
+            }
+          }}>
+          <form className="threshold-editor" onSubmit={luuNguong}>
+            <div className="threshold-dialog-heading">
+              <h2 id="threshold-dialog-title">Chỉnh sửa ngưỡng cảnh báo</h2>
+              <button className="threshold-dialog-close" type="button" aria-label="Đóng"
+                disabled={dangLuuNguong} onClick={() => setDangChinhSuaNguong(false)}>
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+            {DS_CAM_BIEN.map((cb) => (
+              <label className="threshold-editor-field" key={cb.type} htmlFor={`threshold-${cb.type}`}>
+                <span>{cb.title}</span>
+                <span className="threshold-input-wrap">
+                  <input id={`threshold-${cb.type}`} type="text" inputMode="decimal"
+                    autoComplete="off"
+                    value={nguongNhap[cb.type] ?? ""}
+                    onChange={(event) => {
+                      setNguongNhap((current) => ({ ...current, [cb.type]: event.target.value }));
+                      setLoiNguong("");
+                      setThongBaoNguong("");
+                    }} />
+                  <span>{cb.unit}</span>
+                </span>
+              </label>
+            ))}
+            {loiNguong && <p className="threshold-feedback is-error" role="alert">{loiNguong}</p>}
+            {thongBaoNguong && <p className="threshold-feedback" role="status">{thongBaoNguong}</p>}
+            <div className="threshold-actions">
+              <button type="button" disabled={dangLuuNguong}
+                onClick={() => setDangChinhSuaNguong(false)}>Hủy</button>
+              <button type="submit" disabled={dangLuuNguong}>
+                {dangLuuNguong ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </form>
+        </dialog>, document.body)}
     </MainLayout>
   );
 }

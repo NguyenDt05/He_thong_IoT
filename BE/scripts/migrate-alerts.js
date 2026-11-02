@@ -12,8 +12,17 @@ async function migrate() {
     )`);
     await db.query(`CREATE TABLE IF NOT EXISTS sensor_alert_thresholds (
         sensor_type VARCHAR(20) NOT NULL PRIMARY KEY,
-        threshold DECIMAL(8, 2) NOT NULL
+        threshold DECIMAL(10, 2) NOT NULL
     )`);
+    const [[column]] = await db.query(
+        `SELECT NUMERIC_PRECISION AS numericPrecision, NUMERIC_SCALE AS numericScale
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sensor_alert_thresholds'
+           AND COLUMN_NAME = 'threshold'`,
+    );
+    if (Number(column.numericPrecision) !== 10 || Number(column.numericScale) !== 2) {
+        await db.query("ALTER TABLE sensor_alert_thresholds MODIFY COLUMN threshold DECIMAL(10, 2) NOT NULL");
+    }
 
     const connection = await db.getConnection();
     try {
