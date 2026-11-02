@@ -28,7 +28,7 @@ while its sensor remains above the threshold. Manual ON/OFF commands set the
 steady state restored when the alert ends. During an alert, `device/status`
 reports that requested steady state rather than each blink phase, so the
 backend does not fill action history with blink transitions. The Dashboard
-fetches daily crossing counts and editable thresholds from `/api/hardware/alerts`.
+fetches daily counts of above-threshold readings and editable thresholds from `/api/hardware/alerts`.
 The backend publishes the current thresholds to the retained MQTT topic
 `sensor/thresholds` as `{ "temperature": 35, "humidity": 80, "light": 80 }`
 on connection and after a Dashboard edit. The board subscribes on every MQTT

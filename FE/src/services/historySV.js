@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "./apiConfig";
+import { apiFetch } from "./apiFetch";
 
 const API_URL = `${API_BASE_URL}/history`;
 
@@ -9,16 +10,15 @@ export async function layLichSu_sv(page, limit, filters = {}, signal) {
     if (value) params.set(name, value);
   }
 
-  const response = await fetch(`${API_URL}?${params}`, { signal, cache: "no-store" });
+  const response = await apiFetch(`${API_URL}?${params}`, { signal, cache: "no-store" });
   if (!response.ok) throw new Error("Không thể tải lịch sử hoạt động");
   return response.json();
 }
 
 // Ghi thao tác trên công tắc giao diện vào lịch sử.
 export async function ghiLichSu_sv(deviceId, action) {
-  const response = await fetch(API_URL, {
+  const response = await apiFetch(API_URL, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deviceId, action }),
   });

@@ -8,6 +8,9 @@ async function request(path, options = {}) {
     ...options,
   });
   if (!response.ok) {
+    if (response.status === 401 && (path === "/me" || path === "/avatar")) {
+      window.dispatchEvent(new Event("iot:session-expired"));
+    }
     const body = await response.json().catch(() => ({}));
     throw new Error(body.error || "Không thể xử lý tài khoản. Vui lòng thử lại.");
   }

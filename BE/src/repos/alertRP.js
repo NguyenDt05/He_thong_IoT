@@ -1,5 +1,5 @@
 const db = require("../db");
-const { SENSOR_TYPES, validateThresholds, advanceAlertCounter } = require("../service/alertThresholds");
+const { SENSOR_TYPES, validateThresholds, advanceAlertCounter, applyThresholdChange } = require("../service/alertThresholds");
 
 async function getThresholds() {
     const [rows] = await db.execute(
@@ -34,16 +34,32 @@ async function updateThresholds(input) {
         const [sensors] = await connection.execute(
             "SELECT sensor_id AS sensorId, sensor_type AS sensorType FROM sensors WHERE sensor_type IN ('TEMPERATURE', 'HUMIDITY', 'LIGHT')",
         );
+        const [[{ today }]] = await connection.query(
+            "SELECT DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00')) AS today",
+        );
         for (const sensor of sensors) {
             const [[latest]] = await connection.execute(
                 "SELECT value FROM data_sensor WHERE sensor_id = ? ORDER BY created_at DESC, data_id DESC LIMIT 1",
                 [sensor.sensorId],
             );
-            // Giữ số lần đã đếm; đồng bộ trạng thái vượt ngưỡng để mẫu kế tiếp
-            // không tạo ra một lần cảnh báo giả chỉ vì người dùng vừa đổi ngưỡng.
+            if (!latest) continue;
             await connection.execute(
-                "UPDATE sensor_alert_counters SET is_above = ? WHERE sensor_id = ?",
-                [latest && Number(latest.value) > thresholds[sensor.sensorType] ? 1 : 0, sensor.sensorId],
+                `INSERT IGNORE INTO sensor_alert_counters (sensor_id, alert_date, daily_count, is_above)
+                 VALUES (?, ?, 0, 0)`,
+                [sensor.sensorId, today],
+            );
+            const [[current]] = await connection.execute(
+                `SELECT alert_date AS alertDate, daily_count AS dailyCount, is_above AS isAbove
+                 FROM sensor_alert_counters WHERE sensor_id = ? FOR UPDATE`,
+                [sensor.sensorId],
+            );
+            // Đổi ngưỡng có thể bắt đầu một đợt cảnh báo mới ngay trên mẫu gần nhất.
+            // Chỉ cộng khi trạng thái chuyển từ chưa vượt sang vượt ngưỡng.
+            const next = applyThresholdChange(current, today, Number(latest.value), thresholds[sensor.sensorType]);
+            await connection.execute(
+                `UPDATE sensor_alert_counters
+                 SET alert_date = ?, daily_count = ?, is_above = ? WHERE sensor_id = ?`,
+                [next.alertDate, next.dailyCount, next.isAbove ? 1 : 0, sensor.sensorId],
             );
         }
         await connection.commit();

@@ -68,7 +68,8 @@ async function hashPassword(password) {
 
 async function register(body) {
     const username = requiredText(body?.username, "Tên đăng nhập", 50);
-    if (!/^[a-zA-Z0-9_.-]{3,50}$/.test(username)) {
+    if (!/^[a-zA-Z0-9_.-]{3,50}$/.test(username)
+        || ["iot_system", "legacy_guest"].includes(username.toLowerCase())) {
         throw validationError("Tên đăng nhập cần 3–50 ký tự chữ, số, _, . hoặc -");
     }
     const profile = validateProfile(body);
@@ -134,18 +135,27 @@ function readToken(req) {
     return /^[a-f0-9]{64}$/.test(token || "") ? token : null;
 }
 
+async function loadSession(req) {
+    const token = readToken(req);
+    req.auth = token ? await authRP.findSession(tokenHash(token)) : null;
+    req.sessionToken = token;
+}
+
 async function optionalAuth(req, _res, next) {
     try {
-        const token = readToken(req);
-        req.auth = token ? await authRP.findSession(tokenHash(token)) : null;
-        req.sessionToken = token;
+        await loadSession(req);
         next();
     } catch (error) {
         next(error);
     }
 }
 
+function requireAuth(req, res, next) {
+    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
+    next();
+}
+
 module.exports = {
     register, login, updateProfile, startSession, clearSessionCookie,
-    tokenHash, optionalAuth, SESSION_MS,
+    tokenHash, optionalAuth, requireAuth, SESSION_MS,
 };

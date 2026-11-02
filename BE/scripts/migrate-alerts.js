@@ -49,11 +49,6 @@ async function migrate() {
         for (const sensor of sensors) {
             if (initialized.has(sensor.sensorId)) continue;
             const threshold = thresholds[sensor.sensorType];
-            const [[previous]] = await connection.execute(
-                `SELECT value FROM data_sensor WHERE sensor_id = ? AND created_at < ?
-                 ORDER BY created_at DESC, data_id DESC LIMIT 1`,
-                [sensor.sensorId, today],
-            );
             const [readings] = await connection.execute(
                 `SELECT value FROM data_sensor
                  WHERE sensor_id = ? AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
@@ -63,7 +58,7 @@ async function migrate() {
             let counter = {
                 alertDate: today,
                 dailyCount: 0,
-                isAbove: previous ? Number(previous.value) > threshold : false,
+                isAbove: false,
             };
             for (const reading of readings) {
                 counter = advanceAlertCounter(counter, today, Number(reading.value), threshold);

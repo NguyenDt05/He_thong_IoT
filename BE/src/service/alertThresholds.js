@@ -36,9 +36,19 @@ function advanceAlertCounter(current, day, value, threshold) {
     const sameDay = String(current.alertDate).slice(0, 10) === day;
     return {
         alertDate: day,
+        dailyCount: (sameDay ? Number(current.dailyCount) : 0) + (isAbove ? 1 : 0),
+        isAbove,
+    };
+}
+
+function applyThresholdChange(current, day, value, threshold) {
+    const isAbove = value > threshold;
+    const sameDay = String(current.alertDate).slice(0, 10) === day;
+    return {
+        alertDate: day,
         dailyCount: (sameDay ? Number(current.dailyCount) : 0) + (isAbove && !current.isAbove ? 1 : 0),
         isAbove,
     };
 }
 
-module.exports = { DEFAULT_ALERT_THRESHOLDS, SENSOR_TYPES, validateThresholds, advanceAlertCounter };
+module.exports = { DEFAULT_ALERT_THRESHOLDS, SENSOR_TYPES, validateThresholds, advanceAlertCounter, applyThresholdChange };

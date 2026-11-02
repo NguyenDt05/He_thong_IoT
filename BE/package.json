@@ -7,7 +7,8 @@
     "start": "node src/app.js",
     "test": "node --test",
     "db:migrate:alerts": "node scripts/migrate-alerts.js",
-    "db:migrate:auth": "node scripts/migrate-auth.js"
+    "db:migrate:auth": "node scripts/migrate-auth.js",
+    "db:migrate:required-auth": "node scripts/migrate-required-auth.js"
   },
   "keywords": [],
   "author": "",

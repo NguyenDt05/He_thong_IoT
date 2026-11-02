@@ -4,6 +4,8 @@ Base URL khi chạy local: `http://localhost:3001`. Các API bên dưới dùng 
 
 Backend lưu người dùng trong MySQL và lưu phiên trong `auth_sessions`. Đăng ký và đăng nhập trả cookie `iot_session_v2` với `HttpOnly`, `SameSite=Lax`, thời hạn 30 ngày; môi trường production bật thêm `Secure`. Client cần gửi cookie này khi gọi API hồ sơ và ảnh đại diện. Phản hồi tài khoản không chứa mật khẩu hay hash mật khẩu.
 
+Chỉ đăng ký, đăng nhập và đăng xuất là API công khai. Mọi API dữ liệu cảm biến, thiết bị, lịch sử, phần cứng và hồ sơ yêu cầu phiên hợp lệ; thiếu hoặc hết hạn trả `401`. Các dòng `action_history` luôn có `user_id` sau migration `db:migrate:required-auth`.
+
 ## Đăng ký
 
 `POST /api/auth/register` với `Content-Type: application/json`.

@@ -12,7 +12,7 @@ const localNow = "CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00')";
 const from = `
     FROM action_history ah
     JOIN devices d ON d.device_id = ah.device_id
-    LEFT JOIN users u ON u.user_id = ah.user_id
+    JOIN users u ON u.user_id = ah.user_id
 `;
 
 // Lệnh PENDING quá hạn được hiển thị là FAILED.
@@ -161,7 +161,7 @@ async function countHistory(key, deviceId, action, status) {
 }
 
 // Ghi lệnh PENDING, không cho gửi lệnh mới khi lệnh cũ chưa hết hạn.
-async function recordHistory(deviceId, action, userId = null) {
+async function recordHistory(deviceId, action, userId) {
     const connection = await db.getConnection();
 
     try {

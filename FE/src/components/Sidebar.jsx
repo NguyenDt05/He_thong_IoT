@@ -16,7 +16,7 @@ function Sidebar() {
     setLogoutError("");
     try {
       await logout();
-      navigate("/");
+      navigate("/login", true);
     } catch {
       setLogoutError("Không thể đăng xuất. Vui lòng thử lại.");
     }

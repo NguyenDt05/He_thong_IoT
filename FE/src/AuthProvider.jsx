@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./authContext";
 import { getCurrentUser, loginUser, logoutUser, registerUser, updateCurrentUser, uploadUserAvatar } from "./services/authSV";
+import { clearSensorCache } from "./services/dataSensorSV";
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const handleSessionExpired = () => { clearSensorCache(); setUser(null); setLoading(false); };
+    window.addEventListener("iot:session-expired", handleSessionExpired);
     const controller = new AbortController();
     getCurrentUser(controller.signal)
       .then((currentUser) => setUser(currentUser))
@@ -16,7 +19,10 @@ export default function AuthProvider({ children }) {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      window.removeEventListener("iot:session-expired", handleSessionExpired);
+    };
   }, []);
 
   const value = useMemo(() => ({
@@ -44,6 +50,7 @@ export default function AuthProvider({ children }) {
     },
     async logout() {
       await logoutUser();
+      clearSensorCache();
       setUser(null);
     },
   }), [user, loading]);

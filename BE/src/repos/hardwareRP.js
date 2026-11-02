@@ -7,6 +7,14 @@ const STALE_MS = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.
 const COMMAND_TIMEOUT_SECONDS = Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) > 0
     ? Math.ceil(Number(process.env.HARDWARE_COMMAND_TIMEOUT_MS) / 1000) : 30;
 
+async function systemUserId(connection) {
+    const [[user]] = await connection.execute(
+        "SELECT user_id AS userId FROM users WHERE username = 'iot_system' AND password_hash IS NULL",
+    );
+    if (!user) throw new Error("Chưa có tài khoản hệ thống; chạy db:migrate:required-auth");
+    return user.userId;
+}
+
 async function latestReadings() {
     const [rows] = await db.execute(
         `SELECT s.sensor_type AS sensorType, MAX(ds.created_at) AS lastSeenLocal
@@ -90,14 +98,15 @@ async function saveBroadcastDeviceStatus(deviceIds, physicalStatus) {
         );
         if (devices.length > 0) {
             const ids = devices.map((device) => device.deviceId);
+            const userId = await systemUserId(connection);
             await connection.execute(
                 `UPDATE devices SET status = ? WHERE device_id IN (${ids.map(() => "?").join(",")})`,
                 [physicalStatus, ...ids],
             );
             await connection.execute(
                 `INSERT INTO action_history (user_id, device_id, action, status)
-                 VALUES ${ids.map(() => "(NULL, ?, ?, 'SUCCESS')").join(",")}`,
-                ids.flatMap((id) => [id, physicalStatus]),
+                 VALUES ${ids.map(() => "(?, ?, ?, 'SUCCESS')").join(",")}`,
+                ids.flatMap((id) => [userId, id, physicalStatus]),
             );
         }
         await connection.commit();
@@ -164,9 +173,10 @@ async function saveDeviceStatus(id, deviceId, physicalStatus, recordExternalActi
         // Ghi một lần khi trạng thái vật lý đổi ngoài Dashboard. Gói trạng thái
         // định kỳ giữ nguyên giá trị sẽ không tạo thêm lịch sử.
         if (recordExternalAction || (device.status !== physicalStatus && !dashboardAction)) {
+            const userId = await systemUserId(connection);
             await connection.execute(
-                "INSERT INTO action_history (user_id, device_id, action, status) VALUES (NULL, ?, ?, 'SUCCESS')",
-                [deviceId, physicalStatus],
+                "INSERT INTO action_history (user_id, device_id, action, status) VALUES (?, ?, ?, 'SUCCESS')",
+                [userId, deviceId, physicalStatus],
             );
         }
         await connection.commit();

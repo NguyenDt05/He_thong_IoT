@@ -12,7 +12,7 @@ async function listHistory(key, deviceId, action, status, requestedPage, request
 }
 
 // Chuyển yêu cầu ghi thao tác xuống repository.
-async function recordHistory(deviceId, action, userId = null) {
+async function recordHistory(deviceId, action, userId) {
     return historyRP.recordHistory(deviceId, action, userId);
 }
 

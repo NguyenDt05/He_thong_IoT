@@ -521,6 +521,11 @@ function Dashboard() {
         [cb.type, docNguongNhap(nguongNhap[cb.type], cb)]));
       const result = await luuNguongCanhBao_sv(thresholds);
       setCanhBao((current) => ({ ...current, thresholds: result.thresholds }));
+      try {
+        setCanhBao(await layCanhBao_sv());
+      } catch {
+        // Bộ đếm sẽ được tải lại ở lần cập nhật định kỳ tiếp theo.
+      }
       if (result.brokerUpdated) {
         setDangChinhSuaNguong(false);
       } else {

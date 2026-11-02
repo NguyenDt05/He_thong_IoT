@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Router } from "./router";
 import { useNavigation } from "./navigationContext";
+import { useAuth } from "./authContext";
 import DataSensor from "./pages/DataSensor/DataSensor";
 import History from "./pages/History/History";
 import Profile from "./pages/Profile/Profile";
@@ -20,7 +22,16 @@ const pages = {
 
 // Đọc đường dẫn hiện tại từ Router và chọn thành phần trang cần hiển thị.
 function AppPages() {
-  const { pathname } = useNavigation();
+  const { pathname, navigate } = useNavigation();
+  const { user, loading } = useAuth();
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+
+  useEffect(() => {
+    if (!loading && !user && !isAuthPage) navigate("/login", true);
+  }, [loading, user, isAuthPage, navigate]);
+
+  if (loading) return <div role="status">Đang kiểm tra phiên đăng nhập...</div>;
+  if (!user && !isAuthPage) return null;
   const Page = pages[pathname] ?? Dashboard;
 
   return <Page />;

@@ -45,6 +45,20 @@ test("profile and avatar endpoints require a session", async (t) => {
     assert.equal((await fetch(avatarUrl, { method: "PUT", headers: { "Content-Type": "image/png" }, body: Buffer.from("invalid") })).status, 401);
 });
 
+test("all system APIs reject requests without a session", async (t) => {
+    const server = require("../src/app").listen(0);
+    t.after(() => new Promise((resolve) => server.close(resolve)));
+    const base = `http://127.0.0.1:${server.address().port}/api`;
+    for (const [method, path] of [
+        ["GET", "/data-sensor"], ["GET", "/devices"],
+        ["GET", "/history"], ["POST", "/history"],
+        ["GET", "/hardware/status"], ["GET", "/hardware/alerts"],
+        ["PUT", "/hardware/alerts/thresholds"],
+    ]) {
+        assert.equal((await fetch(`${base}${path}`, { method })).status, 401, `${method} ${path}`);
+    }
+});
+
 test("profile uses authenticated GET and PUT", async (t) => {
     const originalSession = authRP.findSession;
     const originalFind = authRP.findById;
@@ -109,4 +123,44 @@ test("avatar GET returns image bytes and PUT updates the current user's image", 
     const updated = await fetch(base, { method: "PUT", headers: { ...headers, "Content-Type": "image/png" }, body: bytes });
     assert.equal(updated.status, 200);
     assert.equal((await updated.json()).avatarFile, "updated.png");
+});
+
+test("login cookie grants profile access and logout revokes it", async (t) => {
+    const originals = {
+        findCredentialsByUsername: authRP.findCredentialsByUsername,
+        createSession: authRP.createSession,
+        findSession: authRP.findSession,
+        deleteSession: authRP.deleteSession,
+        findById: authRP.findById,
+    };
+    t.after(() => Object.assign(authRP, originals));
+    const salt = "0123456789abcdef0123456789abcdef";
+    let activeHash;
+    authRP.findCredentialsByUsername = async () => ({
+        userId: 1,
+        username: "student",
+        fullName: "Student",
+        passwordHash: `${salt}:${scryptSync("correct-password", salt, 64).toString("hex")}`,
+    });
+    authRP.createSession = async (_userId, hash) => { activeHash = hash; };
+    authRP.findSession = async (hash) => hash === activeHash ? { userId: 1 } : null;
+    authRP.deleteSession = async (hash) => { if (hash === activeHash) activeHash = null; };
+    authRP.findById = async () => ({ userId: 1, username: "student", fullName: "Student" });
+
+    const server = require("../src/app").listen(0);
+    t.after(() => new Promise((resolve) => server.close(resolve)));
+    const base = `http://127.0.0.1:${server.address().port}/api/auth`;
+    const login = await fetch(`${base}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "student", password: "correct-password" }),
+    });
+    assert.equal(login.status, 200);
+    const setCookie = login.headers.get("set-cookie");
+    assert.match(setCookie, /iot_session_v2=[a-f0-9]{64};/);
+    assert.match(setCookie, /httponly/i);
+    const cookie = setCookie.match(/iot_session_v2=[a-f0-9]{64}/)[0];
+    assert.equal((await fetch(`${base}/me`, { headers: { Cookie: cookie } })).status, 200);
+    assert.equal((await fetch(`${base}/logout`, { method: "POST", headers: { Cookie: cookie } })).status, 204);
+    assert.equal((await fetch(`${base}/me`, { headers: { Cookie: cookie } })).status, 401);
 });

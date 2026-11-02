@@ -32,7 +32,6 @@ async function login(req, res) {
 }
 
 async function me(req, res) {
-    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
     try {
         return res.json(await authRP.findById(req.auth.userId));
     } catch (error) {
@@ -41,7 +40,6 @@ async function me(req, res) {
 }
 
 async function updateProfile(req, res) {
-    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
     try {
         return res.json(await authService.updateProfile(req.auth.userId, req.body));
     } catch (error) {
@@ -60,7 +58,6 @@ async function logout(req, res) {
 }
 
 async function uploadAvatar(req, res) {
-    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
     try {
         const contentType = req.headers["content-type"]?.split(";")[0].toLowerCase();
         const user = await avatarService.saveAvatar(req.auth.userId, req.body, contentType);
@@ -72,7 +69,6 @@ async function uploadAvatar(req, res) {
 }
 
 async function getAvatar(req, res) {
-    if (!req.auth) return res.status(401).json({ error: "Vui lòng đăng nhập" });
     try {
         const avatar = await avatarService.readAvatar(req.auth.userId);
         if (!avatar) return res.status(404).json({ error: "Chưa có ảnh đại diện" });

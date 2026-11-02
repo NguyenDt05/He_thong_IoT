@@ -87,7 +87,6 @@ export default function AuthPage({ mode }) {
           {isRegister
             ? <span>Đã có tài khoản? <NavigationLink to="/login">Đăng nhập</NavigationLink></span>
             : <span>Chưa có tài khoản? <NavigationLink to="/register">Đăng ký</NavigationLink></span>}
-          <NavigationLink to="/">Tiếp tục với tư cách khách</NavigationLink>
         </div>
       </div>
     </div>

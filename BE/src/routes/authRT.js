@@ -1,16 +1,18 @@
 const express = require("express");
 const ctrl = require("../controller/authCtrl");
-const { optionalAuth } = require("../service/authSV");
+const { requireAuth } = require("../service/authSV");
 
 const router = express.Router();
 
 router.post("/register", ctrl.register);
 router.post("/login", ctrl.login);
-router.get("/me", optionalAuth, ctrl.me);
-router.put("/me", optionalAuth, ctrl.updateProfile);
-router.post("/logout", optionalAuth, ctrl.logout);
-router.put("/avatar", optionalAuth, express.raw({ type: () => true, limit: "2mb" }), ctrl.uploadAvatar);
-router.get("/avatar", optionalAuth, ctrl.getAvatar);
+router.post("/logout", ctrl.logout);
+
+router.use(requireAuth);
+router.get("/me", ctrl.me);
+router.put("/me", ctrl.updateProfile);
+router.put("/avatar", express.raw({ type: () => true, limit: "2mb" }), ctrl.uploadAvatar);
+router.get("/avatar", ctrl.getAvatar);
 
 router.use((error, _req, res, next) => {
     if (error.type === "entity.too.large") {
