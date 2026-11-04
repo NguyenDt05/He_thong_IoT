@@ -37,17 +37,19 @@ function advanceAlertCounter(current, day, value, threshold) {
     const sameDay = String(current.alertDate).slice(0, 10) === day;
     return {
         alertDate: day,
-        // Cộng thêm 1 nếu trạng thái chuyển từ chưa vượt sang vượt ngưỡng
+        // Mỗi số đo vượt ngưỡng cộng 1; sang ngày mới thì bắt đầu đếm lại.
         dailyCount: (sameDay ? Number(current.dailyCount) : 0) + (isAbove ? 1 : 0),
         isAbove,
     };
 }
 
+// Khi đổi ngưỡng, đánh giá lại số đo gần nhất và chỉ cộng khi trạng thái chuyển sang vượt ngưỡng.
 function applyThresholdChange(current, day, value, threshold) {
     const isAbove = value > threshold;
     const sameDay = String(current.alertDate).slice(0, 10) === day;
     return {
         alertDate: day,
+        // Sang ngày mới thì bắt đầu đếm lại; không cộng nếu số đo đã vượt ngưỡng trước đó.
         dailyCount: (sameDay ? Number(current.dailyCount) : 0) + (isAbove && !current.isAbove ? 1 : 0),
         isAbove,
     };
