@@ -31,11 +31,13 @@ function validateThresholds(input) {
     return values;
 }
 
+// Cập nhật bộ đếm cảnh báo khi có số đo mới, bất kể ngưỡng có thay đổi hay không.
 function advanceAlertCounter(current, day, value, threshold) {
     const isAbove = value > threshold;
     const sameDay = String(current.alertDate).slice(0, 10) === day;
     return {
         alertDate: day,
+        // Cộng thêm 1 nếu trạng thái chuyển từ chưa vượt sang vượt ngưỡng
         dailyCount: (sameDay ? Number(current.dailyCount) : 0) + (isAbove ? 1 : 0),
         isAbove,
     };

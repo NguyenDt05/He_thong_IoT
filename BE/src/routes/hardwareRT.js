@@ -14,6 +14,7 @@ router.get("/status", async (_req, res) => {
     }
 });
 
+// Lấy số lần cảnh báo trong ngày và ngưỡng cảnh báo
 router.get("/alerts", async (_req, res) => {
     try {
         const [thresholds, counts] = await Promise.all([alerts.getThresholds(), alerts.dailyAlertCounts()]);
@@ -26,6 +27,7 @@ router.get("/alerts", async (_req, res) => {
     }
 });
 
+// Cập nhật ngưỡng cảnh báo và đồng bộ lên MQTT
 router.put("/alerts/thresholds", async (req, res) => {
     try {
         const thresholds = await alerts.updateThresholds(req.body?.thresholds);

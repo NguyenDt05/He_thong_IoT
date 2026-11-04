@@ -2,6 +2,7 @@ const mqtt = require("mqtt");
 const hardware = require("../repos/hardwareRP");
 const alerts = require("../repos/alertRP");
 
+// Topic phải khớp với firmware: ESP32 gửi số đo/trạng thái và nhận lệnh/ngưỡng.
 const SENSOR_TOPIC = "sensor/data";
 const CONTROL_TOPIC = "device/control";
 const STATUS_TOPIC = "device/status";
@@ -12,15 +13,18 @@ const DEVICE_IDS = new Set((process.env.MQTT_DEVICE_IDS || "1,2,3").split(",")
 let client = null;
 let lastSensorMessageAt = 0;
 
+// Chỉ cho phép gửi lệnh tới các LED đã khai báo trong cấu hình backend.
 function isControllableDeviceId(id) {
     return DEVICE_IDS.has(Number(id));
 }
 
+// Luồng cảm biến được xem là đang hoạt động khi MQTT còn nối và có số đo mới.
 function isSensorStreamLive(now = Date.now()) {
     const staleMs = Number(process.env.HARDWARE_STALE_MS) > 0 ? Number(process.env.HARDWARE_STALE_MS) : 6000;
     return Boolean(client?.connected) && lastSensorMessageAt > 0 && now - lastSensorMessageAt <= staleMs;
 }
 
+// Kiểm tra gói sensor/data rồi đổi tên trường của firmware sang ID cảm biến trong DB.
 function parseSensorMessage(payload, ids) {
     const message = JSON.parse(payload.toString());
     const mapping = [
@@ -40,6 +44,7 @@ function parseSensorMessage(payload, ids) {
     });
 }
 
+// Kiểm tra trạng thái LED; actionId chỉ xác nhận một lệnh riêng từ Dashboard.
 function parseDeviceStatus(payload) {
     const message = JSON.parse(payload.toString());
     const actionId = message?.actionId == null || message.actionId === 0 ? null : message.actionId;
@@ -50,16 +55,18 @@ function parseDeviceStatus(payload) {
         || !["ON", "OFF"].includes(message.status)) {
         throw new Error("Gói device/status không hợp lệ");
     }
-    // A group status does not confirm any single Dashboard action.
+   
     return { actionId: message.deviceId === 0 ? null : actionId,
         deviceId: message.deviceId, status: message.status,
         ...(message.groupCommand === true && { groupCommand: true }) };
 }
 
+// Đóng gói lệnh theo ba trường mà mqttCallback() trên ESP32 đọc.
 function controlMessage(command) {
     return JSON.stringify({ actionId: command.id, deviceId: command.deviceId, command: command.action });
 }
 
+// Gửi ngưỡng hiện tại với retain để ESP32 nhận lại sau khi kết nối MQTT.
 async function publishThresholds(thresholds) {
     if (!client?.connected) return false;
     const payload = JSON.stringify({
@@ -77,6 +84,7 @@ async function publishThresholds(thresholds) {
     });
 }
 
+// Tạo cầu nối MQTT một lần và đăng ký các luồng trao đổi với ESP32.
 function startMqttBridge() {
     if (!process.env.MQTT_URL) {
         console.warn("MQTT_URL chưa được cấu hình; mạch chưa thể gửi dữ liệu vào backend.");
@@ -92,6 +100,7 @@ function startMqttBridge() {
         queueQoSZero: false,
     });
 
+    // Khi kết nối lại, đăng ký topic nhận và đồng bộ ngưỡng từ cơ sở dữ liệu.
     client.on("connect", () => {
         client.subscribe([SENSOR_TOPIC, STATUS_TOPIC], { qos: 0 }, (error) => {
             if (error) console.error("Không thể đăng ký topic MQTT:", error.message);
@@ -103,6 +112,7 @@ function startMqttBridge() {
     client.on("error", (error) => console.error("Lỗi MQTT:", error.message));
     client.on("close", () => { lastSensorMessageAt = 0; });
 
+    // Xử lý số đo theo thứ tự để việc ghi DB và thời điểm nhận không bị đảo.
     let sensorQueue = Promise.resolve();
     client.on("message", (topic, payload) => {
         if (topic === SENSOR_TOPIC) {
@@ -112,6 +122,7 @@ function startMqttBridge() {
                 lastSensorMessageAt = Date.now();
             }).catch((error) => console.error("Không thể lưu sensor/data:", error.message));
         } else if (topic === STATUS_TOPIC) {
+            // Firmware báo trạng thái ổn định của LED; lưu trạng thái và kết quả lệnh.
             try {
                 const message = parseDeviceStatus(payload);
                 const save = message.deviceId === 0
@@ -127,6 +138,7 @@ function startMqttBridge() {
         }
     });
 
+    // Phát lại các lệnh còn chờ mỗi giây đến khi ESP32 phản hồi hoặc lệnh hết hạn.
     let scanning = false;
     const timer = setInterval(async () => {
         if (!client?.connected || scanning) return;

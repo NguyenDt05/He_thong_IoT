@@ -71,7 +71,7 @@ async function updateThresholds(input) {
         connection.release();
     }
 }
-
+// Ghi nhận một số đo mới và cập nhật bộ đếm cảnh báo nếu vượt ngưỡng.
 async function recordReading(connection, sensorId, sensorType, value, day) {
     if (!SENSOR_TYPES.includes(sensorType)) return;
     const [[setting]] = await connection.execute(

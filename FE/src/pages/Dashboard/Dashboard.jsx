@@ -549,7 +549,7 @@ function Dashboard() {
               aria-haspopup="dialog"
               aria-controls="threshold-dialog"
               disabled={!canhBao?.thresholds}
-              onClick={() => {
+              onClick={() => { 
                 setNguongNhap(Object.fromEntries(DS_CAM_BIEN.map((cb) =>
                   [cb.type, canhBao.thresholds[cb.type] == null
                     ? "" : Number(canhBao.thresholds[cb.type]).toFixed(2)])));
@@ -669,7 +669,8 @@ function Dashboard() {
           </div>
         </section>
       </div>
-      {dangChinhSuaNguong && createPortal(
+      {dangChinhSuaNguong && createPortal( 
+        // Hộp thoại chỉnh sửa ngưỡng cảnh báo
         <dialog id="threshold-dialog" ref={nguongDialogRef} className="threshold-dialog"
           aria-labelledby="threshold-dialog-title"
           onCancel={(event) => {
