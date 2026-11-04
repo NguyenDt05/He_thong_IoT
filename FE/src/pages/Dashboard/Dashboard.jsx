@@ -32,6 +32,7 @@ const THOI_GIAN_CAP_NHAT_CANH_BAO = 10000;
 const THOI_GIAN_CHO_TRANG_THAI_MACH = 3000;
 const LOAI_CAM_BIEN = DS_CAM_BIEN.map((cb) => cb.type);
 
+// kiểm tra ngưỡng nhập 
 function docNguongNhap(raw, cb) {
   const text = String(raw ?? "").trim().replace(",", ".");
   if (!/^-?\d{1,8}(?:\.\d{1,2})?$/.test(text)) {
@@ -39,7 +40,7 @@ function docNguongNhap(raw, cb) {
   }
   const value = Number(text);
   const min = cb.type === "TEMPERATURE" ? -40 : 0;
-  const max = cb.type === "TEMPERATURE" ? 125 : 100;
+  const max = cb.type === "TEMPERATURE" ? 125 : 100; 
   if (value < min || value > max) {
     throw new Error(`${cb.title}: giá trị phải nằm trong khoảng ${min}–${max} ${cb.unit}.`);
   }
@@ -510,6 +511,7 @@ function Dashboard() {
     }
   }
 
+  // Lưu ngưỡng cảnh báo  
   async function luuNguong(event) {
     event.preventDefault();
     if (dangLuuNguong) return;
@@ -524,7 +526,7 @@ function Dashboard() {
       try {
         setCanhBao(await layCanhBao_sv());
       } catch {
-        // Bộ đếm sẽ được tải lại ở lần cập nhật định kỳ tiếp theo.
+        
       }
       if (result.brokerUpdated) {
         setDangChinhSuaNguong(false);

@@ -48,6 +48,7 @@ function hardwareStatus(rows, now = Date.now(), streamLive = false) {
     return { connected, lastSeen, staleAfterMs: STALE_MS, checkedAt: new Date(now).toISOString() };
 }
 
+// lưu số đo mới và cập nhật bộ đếm vào db nếu có
 async function saveReadings(readings) {
     const connection = await db.getConnection();
     try {

@@ -7,6 +7,7 @@ export async function layCanhBao_sv(signal) {
   return response.json();
 }
 
+// gọi API để lưu ngưỡng cảnh báo
 export async function luuNguongCanhBao_sv(thresholds) {
   const response = await apiFetch(`${API_BASE_URL}/hardware/alerts/thresholds`, {
     method: "PUT",

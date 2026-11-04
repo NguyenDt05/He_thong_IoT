@@ -12,6 +12,7 @@ async function getThresholds() {
     return Object.fromEntries(SENSOR_TYPES.map((type) => [type, thresholds[type]]));
 }
 
+// Lưu ngưỡng vào db
 async function updateThresholds(input) {
     const thresholds = validateThresholds(input);
     const connection = await db.getConnection();
